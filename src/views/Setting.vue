@@ -1,0 +1,298 @@
+<template>
+  <v-layout align-start="" justify-center="">
+    <Progress v-if="loading.full" :opt="opt"></Progress>
+    <v-col cols="12" v-if="$store.state.deviceDetails">
+      <v-card flat="">
+        <p class="title font-weight-bold">设置</p>
+        <v-switch v-model="form.showMap" inset label="是否显示地图"></v-switch>
+        <v-select
+          :items="$store.state.themes"
+          label="主题选择"
+          outlined=""
+          v-model="form.theme"
+          color="grey"
+          no-data-text="没有主题数据"
+          dense=""
+        ></v-select>
+        <v-select
+          ref="mapList"
+          :items="mapList"
+          label="楼层选择"
+          outlined=""
+          v-model="selectMapID"
+          color="grey"
+          no-data-text="没有楼层数据"
+          dense=""
+        ></v-select>
+        <v-select
+          class="mb-4"
+          v-if="mapList.length > 0"
+          :loading="loading.points"
+          :disabled="loading.points || !selectMapID"
+          v-model="form.points[selectMapID]"
+          :items="items"
+          label="点位选择"
+          multiple
+          hide-details
+          dense=""
+          :menu-props="{ offsetY: true, top: true, maxHeight: '200' }"
+          outlined=""
+          no-data-text="没有点位数据"
+          @focus="loading.pointsSelect = true"
+        ></v-select>
+        <v-alert dense type="info" outlined=""
+          >选择好的点位会自动临时存储，可以全部配置好后再推送
+          <v-card-actions
+            ><v-spacer></v-spacer
+            ><v-btn
+              :ripple="{ class: 'red--text' }"
+              class="subtitle-1"
+              @click="viewSetting = true"
+              text
+            >
+              查看配置信息
+            </v-btn>
+          </v-card-actions>
+        </v-alert>
+        <v-card-actions class="mt-10">
+          <v-btn
+            :ripple="{ class: 'red--text' }"
+            class="subtitle-1"
+            block=""
+            @click="
+              $confirm({ title: '确定推送至设备', callback: updateSetting })
+            "
+          >
+            <v-icon left dense="">fa-file-import</v-icon>
+            推送至设备
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-col>
+    <v-dialog v-model="viewSetting" persistent scrollable fullscreen>
+      <v-card flat="" tile="">
+        <v-card-actions>
+          <span class="subtitle-1">当前配置</span>
+          <v-spacer></v-spacer>
+          <v-btn color="" icon @click="viewSetting = false"
+            ><v-icon>fa-times</v-icon></v-btn
+          >
+        </v-card-actions>
+        <v-divider></v-divider>
+        <v-card-text>
+          <p class=" mt-1">
+            <v-chip color="white" label="">
+              <v-icon left size="15" color="red">fa-map</v-icon>
+              地图显示：<span v-if="form.showMap">是</span
+              ><span v-if="!form.showMap">否</span>
+            </v-chip>
+          </p>
+          <p class=" mt-1">
+            <v-chip color="white" label="">
+              <v-icon left size="15" color="red">fa-tag</v-icon>
+              主题：<span>{{ form.theme }}</span>
+            </v-chip>
+          </p>
+          <p v-for="(item, index) in form.points" :key="index">
+            <span class=" font-weight-bold">{{ maps[index] }}:</span
+            ><v-spacer></v-spacer>
+            <v-chip
+              small=""
+              label=""
+              v-for="(v, i) in item"
+              :key="i"
+              class=" mt-1 mr-1"
+              outlined=""
+              >{{ v.name }}</v-chip
+            >
+          </p>
+        </v-card-text>
+        <v-divider></v-divider>
+      </v-card>
+    </v-dialog>
+  </v-layout>
+</template>
+
+<script>
+import Progress from "@/components/Progress.vue";
+export default {
+  name: "setting",
+  components: { Progress },
+  data() {
+    return {
+      opt: {
+        title: "",
+        finished: false
+      },
+      items: [],
+      mapList: [],
+      maps: {},
+      viewSetting: false,
+      selectMapID: "",
+      form: {
+        showMap: true,
+        theme: "",
+        points: {}
+      },
+      loading: {
+        full: false,
+        points: false
+      }
+    };
+  },
+  mounted() {
+    if (!this.$store.state.deviceDetails) {
+      this.$router.replace("/");
+    }
+    if (this.$store.state.deviceDetails) {
+      this.initMapListData();
+    }
+  },
+  watch: {
+    selectMapID(val) {
+      if (val === "") return;
+      this.loadPointsData();
+    },
+    form: {
+      handler(val) {
+        localStorage.setItem(
+          "deviceControl:points-" +
+            this.$store.state.deviceDetails.equipment_code,
+          JSON.stringify(val)
+        );
+        this.$store.commit("updateSetting", val);
+      },
+      deep: true
+    }
+  },
+  methods: {
+    initMapListData() {
+      const _this = this;
+      const readStore = _this.$store.state.db
+        .transaction("mapGroup")
+        .objectStore("mapGroup")
+        .get(_this.$store.state.deviceDetails.map_pid);
+      let setting = this.$store.state.deviceDetails.setting;
+      if (setting) {
+        try {
+          setting = JSON.parse(setting);
+          this.$set(this.form, "showMap", setting.showMap);
+          this.$set(this.form, "theme", setting.theme);
+          this.$set(this.form, "points", setting.points);
+        } catch (e) {}
+      }
+      readStore.onsuccess = function(e) {
+        const r = e.target.result;
+        if (r && r.val) {
+          for (let i = 0; i < r.val.length; i++) {
+            _this.maps[r.val[i].map_id] = r.val[i].detailed_name;
+            _this.mapList.push({
+              text: r.val[i].detailed_name,
+              value: r.val[i].map_id
+            });
+            if (!_this.form.points[r.val[i].map_id]) {
+              _this.$set(_this.form.points, r.val[i].map_id, []);
+            }
+          }
+        }
+      };
+    },
+    loadPointsData() {
+      this.items = [];
+      this.loading.points = true;
+      const _this = this;
+      const readStore = _this.$store.state.db
+        .transaction("mapPolygons")
+        .objectStore("mapPolygons")
+        .get(_this.selectMapID);
+      readStore.onsuccess = function(e) {
+        const r = e.target.result;
+        if (r && r.val) {
+          for (let i = 0; i < r.val.length; i++) {
+            _this.items.push({
+              text: r.val[i].point_name,
+              value: { map_gid: r.val[i].map_gid, name: r.val[i].point_name }
+            });
+          }
+        }
+        setTimeout(() => {
+          _this.loading.points = false;
+        }, 500);
+      };
+    },
+    sendOpt(options = {}) {
+      if (!options.opt) {
+        return;
+      }
+      const code = this.$store.state.deviceDetails.equipment_code;
+      options.project_id = this.$store.state.deviceDetails.equipment_project_id;
+      options.code = code;
+      if (options.confirm === true) {
+        options.messageId = code + "-" + new Date().getTime();
+      }
+      if (typeof options.args !== "object") {
+        options.args = {};
+      }
+      if (options.args.points && Object.keys(options.args.points).length > 0) {
+        const _p = options.args.points;
+        options.args["distributor_id"] = "";
+        for (let i in _p) {
+          for (let m = 0; m < _p[i].length; m++) {
+            options.args["distributor_id"] += "," + _p[i][m].map_gid;
+          }
+        }
+        options.args["distributor_id"] = options.args[
+          "distributor_id"
+        ].substring(1);
+        delete options.args.points;
+      }
+      const _this = this;
+      this.loading.full = true;
+      this.opt.title = "处理中";
+      this.opt.finished = false;
+      this.$http
+        .post(this.apiHost + "/opt", options)
+        .then(
+          function() {
+            _this.opt.title = "配置发送成功";
+          },
+          function(err) {
+            if (!err.body) {
+              err.body = "操作失败";
+            }
+            _this.opt.title = err.body;
+          }
+        )
+        .finally(function() {
+          _this.opt.finished = true;
+          setTimeout(function() {
+            _this.loading.full = false;
+          }, 3000);
+        });
+    },
+    genPreviewData() {
+      this.viewSetting = true;
+    },
+    updateSetting() {
+      let args = JSON.parse(
+        localStorage.getItem(
+          "deviceControl:points-" +
+            this.$store.state.deviceDetails.equipment_code
+        )
+      );
+      if (!args) {
+        this.$toast.error("配置信息加载失败");
+        return;
+      }
+      const options = {
+        opt: "updateSetting",
+        expiration: "10000",
+        confirm: true,
+        args: args
+      };
+
+      this.sendOpt(options);
+    }
+  }
+};
+</script>
