@@ -68,6 +68,12 @@
 </template>
 
 <script>
+/**
+ * @apiDefine commonProperties
+ * @apiParam (properties) {String} AppId 发送消息的客户端编号
+ * @apiParam (properties) {String} ReplyTo 需要发送回执的消息编号。若不为空，则需要设置回执命令的ReplyTo为此内容，然后发送回执命令给AppId，成功后再执行命令
+ * @apiParam (properties) {Json} Body 命令内容
+ */
 import Progress from "@/components/Progress.vue";
 export default {
   name: "overview",
@@ -163,36 +169,84 @@ export default {
           }, 3000);
         });
     },
+    /**
+     * @api {rabbitmq message} enterExit 开启紧急疏散
+     * @apiVersion 0.1.0
+     * @apiUse commonProperties
+     * @apiGroup Command
+     * @apiSuccessExample {json} 命令内容示例:
+     * {"opt":"enterExit","args":{}}
+     */
     enterExit() {
       console.log("enterExit");
       const options = Object.assign({}, this.options);
       options.opt = "enterExit";
       this.sendOpt(options);
     },
+    /**
+     * @api {rabbitmq message} quitExit 退出紧急疏散
+     * @apiVersion 0.1.0
+     * @apiUse commonProperties
+     * @apiGroup Command
+     * @apiSuccessExample {json} 命令内容示例:
+     * {"opt":"quitExit","args":{}}
+     */
     quitExit() {
       console.log("quitExit");
       const options = Object.assign({}, this.options);
       options.opt = "quitExit";
       this.sendOpt(options);
     },
+    /**
+     * @api {rabbitmq message} reboot 重启设备
+     * @apiVersion 0.1.0
+     * @apiUse commonProperties
+     * @apiGroup Command
+     * @apiSuccessExample {json} 命令内容示例:
+     * {"opt":"reboot","args":{}}
+     */
     reboot() {
       console.log("reboot");
       const options = Object.assign({}, this.options);
       options.opt = "reboot";
       this.sendOpt(options);
     },
+    /**
+     * @api {rabbitmq message} refreshDB 清除前端数据库
+     * @apiVersion 0.1.0
+     * @apiUse commonProperties
+     * @apiGroup Command
+     * @apiSuccessExample {json} 命令内容示例:
+     * {"opt":"refreshDB","args":{}}
+     */
     refreshDB() {
       console.log("refreshDB");
       const options = Object.assign({}, this.options);
       options.opt = "refreshDB";
       this.sendOpt(options);
     },
+    /**
+     * @api {rabbitmq message} refreshSW 升级前端代码
+     * @apiVersion 0.1.0
+     * @apiUse commonProperties
+     * @apiGroup Command
+     * @apiSuccessExample {json} 命令内容示例:
+     * {"opt":"refreshSW","args":{}}
+     */
     refreshSW() {
       console.log("refreshSW");
       const options = Object.assign({}, this.options);
       options.opt = "refreshSW";
       this.sendOpt(options);
     },
+    /**
+     * @api {rabbitmq message} restartApp 重启前端应用
+     * @apiVersion 0.1.0
+     * @apiUse commonProperties
+     * @apiGroup Command
+     * @apiSuccessExample {json} 命令内容示例:
+     * {"opt":"restartApp","args":{}}
+     */
     restartApp() {
       console.log("restartApp");
       const options = Object.assign({}, this.options);

@@ -273,6 +273,16 @@ export default {
     genPreviewData() {
       this.viewSetting = true;
     },
+    /**
+     * @api {opt} updateSetting 更新前端配置
+     * @apiVersion 0.1.0
+     * @apiParam (properties) {String} AppId 发送消息的客户端编号
+     * @apiParam (properties) {String} ReplyTo 需要发送回执的消息编号。若不为空，则需要设置回执命令的ReplyTo为此内容，然后发送回执命令给AppId，成功后再执行命令
+     * @apiParam (properties) {Json} Body 命令内容
+     * @apiGroup Command
+     * @apiSuccessExample {json} 命令内容示例:
+     * {"opt":"updateSetting","args":{"distributor_id":"457_301,457_300,457_4,457_2,459_4,459_3,459_15,459_13","showMap":true,"theme":"theme_1"}}
+     */
     updateSetting() {
       let args = JSON.parse(
         localStorage.getItem(
