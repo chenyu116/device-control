@@ -116,6 +116,10 @@ export default {
     },
     clearData() {
       localStorage.clear();
+      this.$store.commit(
+        "updateDbVersion",
+        parseInt(this.$store.state.dbVersion + 1)
+      );
       this.$store.commit("updateDataLoaded", false);
     }
   }

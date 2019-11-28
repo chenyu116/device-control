@@ -18,7 +18,7 @@
 export default {
   name: "index",
   components: {},
-  created() {
+  mounted() {
     this.loadDeviceList();
   },
   data() {
@@ -52,7 +52,6 @@ export default {
         if (r) {
           _this.$store.commit("updateEquipmentCode", _this.equipmentCode);
           _this.$store.commit("updateDeviceDetails", r);
-          _this.$store.commit("updateSetting", r.setting);
           _this.$router.replace("/overview");
         } else {
           _this.errMsg = "读取设备信息失败";

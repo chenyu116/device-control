@@ -29,7 +29,7 @@
           v-if="mapList.length > 0"
           :loading="loading.points"
           :disabled="loading.points || !selectMapID"
-          v-model="form.points[selectMapID]"
+          v-model="distributorId"
           :items="items"
           label="点位选择"
           multiple
@@ -38,7 +38,6 @@
           :menu-props="{ offsetY: true, top: true, maxHeight: '200' }"
           outlined=""
           no-data-text="没有点位数据"
-          @focus="loading.pointsSelect = true"
         ></v-select>
         <v-alert dense type="info" outlined=""
           >选择好的点位会自动临时存储，可以全部配置好后再推送
@@ -93,7 +92,7 @@
               主题：<span>{{ form.theme }}</span>
             </v-chip>
           </p>
-          <p v-for="(item, index) in form.points" :key="index">
+          <p v-for="(item, index) in points" :key="index">
             <span class=" font-weight-bold">{{ maps[index] }}:</span
             ><v-spacer></v-spacer>
             <v-chip
@@ -128,14 +127,17 @@ export default {
       viewSetting: false,
       selectMapID: "",
       form: {
-        showMap: true,
+        showMap: false,
         theme: "",
-        points: {}
+        distributor_id: ""
       },
       loading: {
         full: false,
         points: false
-      }
+      },
+      points: {},
+      distributorId: [],
+      initDistributorId: []
     };
   },
   mounted() {
@@ -143,6 +145,7 @@ export default {
       this.$router.replace("/");
       return;
     }
+    this.initData();
     this.initMapListData();
   },
   watch: {
@@ -150,34 +153,61 @@ export default {
       if (val === "") return;
       this.loadPointsData();
     },
-    form: {
+    distributorId: {
       handler(val) {
+        console.log("watch", val);
+        const distributor_id = [];
+        const points = {};
+        for (let i = 0; i < val.length; i++) {
+          if (val[i].map_gid) {
+            distributor_id.push(val[i].map_gid);
+            if (!points[val[i].map_id]) {
+              points[val[i].map_id] = [];
+            }
+            points[val[i].map_id].push(val[i]);
+          }
+        }
+        this.points = points;
+        this.form.distributor_id = distributor_id.join(",");
         localStorage.setItem(
-          "deviceControl:points-" +
+          "deviceControl:setting-" +
             this.$store.state.deviceDetails.equipment_code,
-          JSON.stringify(val)
+          JSON.stringify(this.form)
         );
-        this.$store.commit("updateSetting", val);
-      },
-      deep: true
+      }
     }
   },
   methods: {
+    initData() {
+      this.initDistributorId = this.$store.state.deviceDetails.distributor_id.split(
+        ","
+      );
+      this.form.theme =
+        this.$store.state.themes.length > 0
+          ? this.$store.state.themes[0].value
+          : "";
+      let setting = this.$store.state.deviceDetails.setting;
+      if (setting) {
+        try {
+          setting = JSON.parse(setting);
+          this.form.showMap = setting.showMap;
+          this.form.theme = setting.theme;
+        } catch (e) {}
+      }
+      this.form.distributor_id = this.$store.state.deviceDetails.distributor_id;
+      localStorage.setItem(
+        "deviceControl:setting-" +
+          this.$store.state.deviceDetails.equipment_code,
+        JSON.stringify(this.form)
+      );
+      console.log("this.initDistributorId", this.form);
+    },
     initMapListData() {
       const _this = this;
       const readStore = _this.$store.state.db
         .transaction("mapGroup")
         .objectStore("mapGroup")
         .get(_this.$store.state.deviceDetails.map_pid);
-      let setting = this.$store.state.deviceDetails.setting;
-      if (setting) {
-        try {
-          setting = JSON.parse(setting);
-          this.$set(this.form, "showMap", setting.showMap);
-          this.$set(this.form, "theme", setting.theme);
-          this.$set(this.form, "points", setting.points);
-        } catch (e) {}
-      }
       readStore.onsuccess = function(e) {
         const r = e.target.result;
         if (r && r.val) {
@@ -187,9 +217,6 @@ export default {
               text: r.val[i].detailed_name,
               value: r.val[i].map_id
             });
-            if (!_this.form.points[r.val[i].map_id]) {
-              _this.$set(_this.form.points, r.val[i].map_id, []);
-            }
           }
         }
       };
@@ -206,11 +233,22 @@ export default {
         const r = e.target.result;
         if (r && r.val) {
           for (let i = 0; i < r.val.length; i++) {
+            const item = {
+              map_id: r.val[i].map_id,
+              map_gid: r.val[i].map_gid,
+              name: r.val[i].point_name
+            };
             _this.items.push({
               text: r.val[i].point_name,
-              value: { map_gid: r.val[i].map_gid, name: r.val[i].point_name }
+              value: item
             });
+            const initIndex = _this.initDistributorId.indexOf(r.val[i].map_gid);
+            if (initIndex > -1) {
+              _this.distributorId.push(item);
+              _this.initDistributorId.splice(initIndex, 1);
+            }
           }
+          console.log("this.initDistributorId", _this.initDistributorId);
         }
         setTimeout(() => {
           _this.loading.points = false;
@@ -243,6 +281,7 @@ export default {
         options.args["distributor_id"] = options.args[
           "distributor_id"
         ].substring(1);
+        this.distributor_id = options.args["distributor_id"].split(",");
         delete options.args.points;
       }
       const _this = this;
@@ -285,7 +324,7 @@ export default {
     updateSetting() {
       let args = JSON.parse(
         localStorage.getItem(
-          "deviceControl:points-" +
+          "deviceControl:setting-" +
             this.$store.state.deviceDetails.equipment_code
         )
       );
@@ -297,7 +336,7 @@ export default {
         opt: "updateSetting",
         expiration: "10000",
         confirm: true,
-        args: args
+        args: this.form
       };
 
       this.sendOpt(options);

@@ -19,8 +19,8 @@ export default new Vuex.Store({
     themes: window.themes
   },
   mutations: {
-    updateSetting(state, value) {
-      state.setting = value;
+    updateDbVersion(state, value) {
+      state.dbVersion = value;
     },
     updateProject(state, value) {
       state.project = value;

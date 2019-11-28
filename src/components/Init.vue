@@ -190,6 +190,9 @@ export default {
                 params: {
                   projectID: _this.$store.state.projectID,
                   timestamp: parseInt(new Date().getTime() / 1000)
+                },
+                headers: {
+                  "x-refresh": "1"
                 }
               })
               .then(function(resp) {
