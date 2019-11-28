@@ -111,7 +111,7 @@ export default {
             opt: "message",
             expiration: "10000",
             confirm: true,
-            args: _this.form
+            args: Object.assign({}, _this.form)
           };
 
           _this.sendOpt(options);

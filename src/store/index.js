@@ -16,8 +16,7 @@ export default new Vuex.Store({
     db: null,
     dbVersion: window.dbVersion,
     setting: null,
-    themes: window.themes,
-    messageType: window.messageType
+    themes: window.themes
   },
   mutations: {
     updateSetting(state, value) {
