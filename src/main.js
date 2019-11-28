@@ -9,9 +9,9 @@ import vuetify from "./plugins/vuetify";
 import "roboto-fontface/css/roboto/roboto-fontface.css";
 import "@fortawesome/fontawesome-free/css/all.css";
 import "./scss/variables.scss";
-import Loader from "./components/Loader.vue";
 import Confirm from "./plugins/confirm";
 import Toast from "./plugins/toast";
+import Progress from "@/components/Progress.vue";
 Vue.config.productionTip = false;
 Promise.config({
   // Enable warnings
@@ -26,9 +26,8 @@ Promise.config({
   asyncHooks: true
 });
 window.Promise = Promise;
-Vue.component("Loader", Loader);
+Vue.component("Progress", Progress);
 Vue.use(VueResource);
-Vue.http.options.emulateJSON = false;
 Vue.http.options.emulateHTTP = true;
 Vue.http.options.timeout = 15000;
 Vue.use(Confirm);

@@ -9,14 +9,15 @@ export default new Vuex.Store({
       opt: ""
     },
     project: {},
-    projectID: window.projectID,
+    projectID: 135,
     equipmentCode: null,
     deviceDetails: null,
     dataLoaded: false,
     db: null,
     dbVersion: window.dbVersion,
     setting: null,
-    themes: window.themes
+    themes: window.themes,
+    messageType: window.messageType
   },
   mutations: {
     updateSetting(state, value) {

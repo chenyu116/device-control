@@ -23,7 +23,10 @@
           </v-btn>
         </template>
         <v-list dense="">
-          <v-list-item @click="goOverview" v-if="$store.state.deviceDetails">
+          <v-list-item
+            @click="goPage('/overview')"
+            v-if="$store.state.deviceDetails"
+          >
             <v-list-item-icon>
               <v-icon dense="">fa-info-circle</v-icon>
             </v-list-item-icon>
@@ -31,12 +34,26 @@
               设备信息
             </v-list-item-content>
           </v-list-item>
-          <v-list-item @click="goSetting" v-if="$store.state.deviceDetails">
+          <v-list-item
+            @click="goPage('/setting')"
+            v-if="$store.state.deviceDetails"
+          >
             <v-list-item-icon>
               <v-icon dense="">fa-cog</v-icon>
             </v-list-item-icon>
             <v-list-item-content>
               设置
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item
+            @click="goPage('/message')"
+            v-if="$store.state.deviceDetails"
+          >
+            <v-list-item-icon>
+              <v-icon dense="">fa-info</v-icon>
+            </v-list-item-icon>
+            <v-list-item-content>
+              推送消息
             </v-list-item-content>
           </v-list-item>
           <v-list-item v-if="$store.state.deviceDetails"></v-list-item>
@@ -94,11 +111,8 @@ export default {
       this.$store.commit("updateDeviceDetails", null);
       this.$router.replace("/");
     },
-    goOverview() {
-      this.$router.replace("/overview");
-    },
-    goSetting() {
-      this.$router.replace("/setting");
+    goPage(page) {
+      this.$router.replace(page);
     },
     clearData() {
       localStorage.clear();

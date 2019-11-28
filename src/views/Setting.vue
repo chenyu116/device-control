@@ -114,10 +114,8 @@
 </template>
 
 <script>
-import Progress from "@/components/Progress.vue";
 export default {
-  name: "setting",
-  components: { Progress },
+  components: {},
   data() {
     return {
       opt: {
@@ -143,10 +141,9 @@ export default {
   mounted() {
     if (!this.$store.state.deviceDetails) {
       this.$router.replace("/");
+      return;
     }
-    if (this.$store.state.deviceDetails) {
-      this.initMapListData();
-    }
+    this.initMapListData();
   },
   watch: {
     selectMapID(val) {
@@ -238,7 +235,9 @@ export default {
         options.args["distributor_id"] = "";
         for (let i in _p) {
           for (let m = 0; m < _p[i].length; m++) {
-            options.args["distributor_id"] += "," + _p[i][m].map_gid;
+            if (_p[i][m].map_gid) {
+              options.args["distributor_id"] += "," + _p[i][m].map_gid;
+            }
           }
         }
         options.args["distributor_id"] = options.args[

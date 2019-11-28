@@ -74,10 +74,8 @@
  * @apiParam (properties) {String} ReplyTo 需要发送回执的消息编号。若不为空，则需要设置回执命令的ReplyTo为此内容，然后发送回执命令给AppId，成功后再执行命令
  * @apiParam (properties) {Json} Body 命令内容
  */
-import Progress from "@/components/Progress.vue";
 export default {
-  name: "overview",
-  components: { Progress },
+  components: {},
   data() {
     return {
       opt: {
