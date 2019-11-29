@@ -11,6 +11,28 @@
         no-data-text="没有数据"
         dense=""
       ></v-autocomplete>
+      <v-btn
+        depressed=""
+        :ripple="{ class: 'red--text' }"
+        class="subtitle-1 mt-12"
+        block=""
+        to="message-select"
+        replace=""
+      >
+        <v-icon left dense="">fa-file-import</v-icon>
+        消息推送（可选设备）
+      </v-btn>
+      <v-btn
+        depressed=""
+        :ripple="{ class: 'red--text' }"
+        class="subtitle-1 mt-12"
+        block=""
+        to="evacuate"
+        replace=""
+      >
+        <v-icon left dense="">fa-file-import</v-icon>
+        紧急疏散
+      </v-btn>
     </v-col>
   </v-layout>
 </template>

@@ -56,9 +56,31 @@
               推送消息
             </v-list-item-content>
           </v-list-item>
-          <v-list-item v-if="$store.state.deviceDetails"></v-list-item>
-          <v-divider v-if="$store.state.deviceDetails"></v-divider>
-          <v-list-item @click="goHome" v-if="$store.state.deviceDetails">
+          <v-list-item
+            @click="goPage('/message-select')"
+            v-if="!$store.state.deviceDetails"
+          >
+            <v-list-item-icon>
+              <v-icon dense="">fa-info</v-icon>
+            </v-list-item-icon>
+            <v-list-item-content>
+              消息推送（可选设备）
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item
+            @click="goPage('/evacuate')"
+            v-if="!$store.state.deviceDetails"
+          >
+            <v-list-item-icon>
+              <v-icon dense="">fa-info</v-icon>
+            </v-list-item-icon>
+            <v-list-item-content>
+              紧急疏散
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item></v-list-item>
+          <v-divider></v-divider>
+          <v-list-item @click="goHome">
             <v-list-item-icon>
               <v-icon dense="">fa-list</v-icon>
             </v-list-item-icon>

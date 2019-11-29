@@ -1,9 +1,28 @@
 <template>
   <v-layout align-start="" justify-center="">
     <Progress v-if="loading.full" :opt="opt"></Progress>
-    <v-col cols="12" v-if="$store.state.deviceDetails">
+    <v-col cols="12" v-if="!$store.state.deviceDetails">
       <v-card flat="">
-        <p class="title font-weight-bold">消息推送</p>
+        <p class="title font-weight-bold">消息推送（可选设备）</p>
+        <v-select
+          label="设备选择"
+          :items="list"
+          v-model="selected"
+          :disabled="loading.full"
+          no-data-text="没有数据"
+          outlined=""
+          multiple=""
+          dense=""
+        >
+          <template v-if="true" v-slot:selection="{ item, index }">
+            <v-chip v-if="index === 0">
+              <span>{{ item.text }}</span>
+            </v-chip>
+            <span v-if="index === 1" class="grey--text caption"
+              >(+{{ selected.length - 1 }} 更多)</span
+            >
+          </template>
+        </v-select>
         <v-select
           :items="types"
           label="消息类型"
@@ -50,12 +69,12 @@
 export default {
   components: {},
   mounted() {
-    if (!this.$store.state.deviceDetails) {
-      this.$router.replace("/");
-    }
+    this.loadDeviceList();
   },
   data() {
     return {
+      list: [],
+      selected: [],
       opt: {
         title: "",
         finished: false
@@ -77,15 +96,19 @@ export default {
         type: "",
         content: "",
         duration: 10
+      },
+      eTypes: {
+        show: "展示屏",
+        infowithfinder: "指路信息屏",
+        info: "信息屏",
+        infoandfinder: "信息屏+指路仪",
+        projection: "投影设备",
+        guide: "导览屏",
+        infoandguider: "导览屏+信息屏",
+        index: "索引屏",
+        indexandfinder: "索引屏+指路仪"
       }
     };
-  },
-  watch: {
-    equipmentCode(val) {
-      if (val) {
-        this.loadEquipmentDetails();
-      }
-    }
   },
   methods: {
     /**
@@ -110,7 +133,7 @@ export default {
           const options = {
             opt: "message",
             expiration: "10000",
-            confirm: true,
+            confirm: false,
             args: Object.assign({}, _this.form)
           };
 
@@ -123,12 +146,12 @@ export default {
         return;
       }
 
-      const code = this.$store.state.deviceDetails.equipment_code;
-      options.project_id = this.$store.state.deviceDetails.equipment_project_id;
-      options.code = code;
-      if (options.confirm === true) {
-        options.messageId = code + "-" + new Date().getTime();
+      let code = this.selected.join(",");
+      if (this.selected.length === this.list.length) {
+        code = "all";
       }
+      options.project_id = "" + this.$store.state.projectID;
+      options.code = code;
       if (typeof options.args !== "object") {
         options.args = {};
       }
@@ -158,6 +181,34 @@ export default {
             _this.loading.full = false;
           }, 3000);
         });
+    },
+    loadDeviceList() {
+      const _this = this;
+      const readStore = _this.$store.state.db
+        .transaction("equipmentList")
+        .objectStore("equipmentList")
+        .getAll();
+      readStore.onsuccess = function(e) {
+        const r = e.target.result;
+        if (r) {
+          for (let i = 0; i < r.length; i++) {
+            const _type = _this.eTypes[r[i].equipment_type] || "";
+            const item = {
+              text: r[i].name + "[" + _type + "] " + r[i].equipment_code,
+              value: r[i].equipment_code
+            };
+            _this.list.push(item);
+            _this.selected.push(r[i].equipment_code);
+          }
+        } else {
+          _this.errMsg = "读取设备列表失败";
+        }
+        _this.loading.full = false;
+      };
+      readStore.onerror = function() {
+        _this.errMsg = "读取设备列表失败";
+        _this.loading.full = false;
+      };
     }
   }
 };

@@ -43,28 +43,6 @@
           <v-icon left dense="">{{ item.icon }}</v-icon>
           {{ item.title }}
         </v-btn>
-        <v-btn
-          v-if="$store.state.project.project_emergency_evacuation === '0'"
-          :ripple="{ class: 'red--text' }"
-          class="subtitle-1 mt-5 white--text"
-          block=""
-          @click="$confirm({ title: '确定 紧急疏散', callback: enterExit })"
-          color="red"
-        >
-          <v-icon left dense="">fa-running</v-icon>
-          紧急疏散
-        </v-btn>
-        <v-btn
-          v-else-if="$store.state.project.project_emergency_evacuation === '1'"
-          :ripple="{ class: 'red--text' }"
-          class="subtitle-1 mt-5 white--text"
-          block=""
-          @click="$confirm({ title: '确定 退出紧急疏散', callback: quitExit })"
-          color="red"
-        >
-          <v-icon left dense="">fa-running</v-icon>
-          退出紧急疏散
-        </v-btn>
       </v-card>
     </v-col>
   </v-layout>
@@ -141,21 +119,6 @@ export default {
     this.getStatus();
   },
   methods: {
-    callbackUpdateProject(options) {
-      const p = Object.assign({}, this.$store.state.project);
-      switch (options.opt) {
-        case "enterExit":
-          p.project_emergency_evacuation = "1";
-          break;
-        case "quitExit":
-          p.project_emergency_evacuation = "0";
-          break;
-        default:
-          return;
-      }
-
-      this.$store.commit("updateProject", p);
-    },
     sendOpt(options = {}, callback) {
       if (!options.opt) {
         return;
@@ -198,34 +161,6 @@ export default {
             _this.loading.full = false;
           }, 3000);
         });
-    },
-    /**
-     * @api {rabbitmq message} enterExit 开启紧急疏散
-     * @apiVersion 0.1.0
-     * @apiUse commonProperties
-     * @apiGroup Command
-     * @apiSuccessExample {json} 命令内容示例:
-     * {"opt":"enterExit","args":{}}
-     */
-    enterExit() {
-      console.log("enterExit");
-      const options = Object.assign({}, this.options);
-      options.opt = "enterExit";
-      this.sendOpt(options, this.callbackUpdateProject);
-    },
-    /**
-     * @api {rabbitmq message} quitExit 退出紧急疏散
-     * @apiVersion 0.1.0
-     * @apiUse commonProperties
-     * @apiGroup Command
-     * @apiSuccessExample {json} 命令内容示例:
-     * {"opt":"quitExit","args":{}}
-     */
-    quitExit() {
-      console.log("quitExit");
-      const options = Object.assign({}, this.options);
-      options.opt = "quitExit";
-      this.sendOpt(options, this.callbackUpdateProject);
     },
     /**
      * @api {rabbitmq message} reboot 重启设备
