@@ -4,7 +4,7 @@
     <v-col cols="12" v-if="$store.state.deviceDetails">
       <v-card flat="">
         <p class="title font-weight-bold">设备信息</p>
-        <v-card-text>
+        <v-card-text class=" pt-0">
           <p class="black--text full-width">
             状态：<v-btn text @click="getStatus" :loading="loading.getStatus"
               ><span :class="status.class">{{ status.text }}</span
@@ -14,6 +14,9 @@
           <p class="black--text full-width">
             位置名称：{{ $store.state.deviceDetails.map_name }}
             {{ $store.state.deviceDetails.name }}
+          </p>
+          <p class="black--text full-width">
+            类型：{{ types[$store.state.deviceDetails.equipment_type] }}
           </p>
           <p class="black--text full-width">
             mapGid：{{ $store.state.deviceDetails.equipment_map_id }}_{{
@@ -116,7 +119,18 @@ export default {
           icon: "fa-redo-alt",
           callback: this.restartApp
         }
-      ]
+      ],
+      types: {
+        show: "展示屏",
+        infowithfinder: "指路信息屏",
+        info: "信息屏",
+        infoandfinder: "信息屏+指路仪",
+        projection: "投影设备",
+        guide: "导览屏",
+        infoandguider: "导览屏+信息屏",
+        index: "索引屏",
+        indexandfinder: "索引屏+指路仪"
+      }
     };
   },
   mounted() {
@@ -125,12 +139,24 @@ export default {
       return;
     }
     this.getStatus();
-    // const p = Object.assign({}, this.$store.state.project);
-    // p.project_emergency_evacuation = "1";
-    // this.$store.commit("updateProject", p);
   },
   methods: {
-    sendOpt(options = {}) {
+    callbackUpdateProject(options) {
+      const p = Object.assign({}, this.$store.state.project);
+      switch (options.opt) {
+        case "enterExit":
+          p.project_emergency_evacuation = "1";
+          break;
+        case "quitExit":
+          p.project_emergency_evacuation = "0";
+          break;
+        default:
+          return;
+      }
+
+      this.$store.commit("updateProject", p);
+    },
+    sendOpt(options = {}, callback) {
       if (!options.opt) {
         return;
       }
@@ -152,12 +178,18 @@ export default {
         .then(
           function() {
             _this.opt.title = "命令发送成功";
+            if (typeof callback === "function") {
+              callback(options);
+            }
           },
           function(err) {
             if (!err.body) {
               err.body = "操作失败";
             }
             _this.opt.title = err.body;
+            if (err.status !== 500 && typeof callback === "function") {
+              callback(options);
+            }
           }
         )
         .finally(function() {
@@ -179,7 +211,7 @@ export default {
       console.log("enterExit");
       const options = Object.assign({}, this.options);
       options.opt = "enterExit";
-      this.sendOpt(options);
+      this.sendOpt(options, this.callbackUpdateProject);
     },
     /**
      * @api {rabbitmq message} quitExit 退出紧急疏散
@@ -193,7 +225,7 @@ export default {
       console.log("quitExit");
       const options = Object.assign({}, this.options);
       options.opt = "quitExit";
-      this.sendOpt(options);
+      this.sendOpt(options, this.callbackUpdateProject);
     },
     /**
      * @api {rabbitmq message} reboot 重启设备

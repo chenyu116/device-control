@@ -175,105 +175,75 @@ export default {
     initDeviceList() {
       const _this = this;
       return new Promise(function(resolve, reject) {
-        const readStore = _this.$store.state.db
-          .transaction("equipmentList")
-          .objectStore("equipmentList")
-          .count();
-        readStore.onsuccess = function(e) {
-          const r = e.target.result;
-          if (r && r > 0) {
-            _this.finished++;
-            resolve();
-          } else {
-            _this.$http
-              .get(_this.apiHost + "/equipment/list", {
-                params: {
-                  projectID: _this.$store.state.projectID,
-                  timestamp: parseInt(new Date().getTime() / 1000)
-                },
-                headers: {
-                  "x-refresh": "1"
-                }
-              })
-              .then(function(resp) {
-                if (resp.status === 200) {
-                  const writeStore = _this.$store.state.db
-                    .transaction("equipmentList", "readwrite")
-                    .objectStore("equipmentList");
+        _this.$http
+          .get(_this.apiHost + "/equipment/list", {
+            params: {
+              projectID: _this.$store.state.projectID,
+              timestamp: parseInt(new Date().getTime() / 1000)
+            },
+            headers: {
+              "x-refresh": "1"
+            }
+          })
+          .then(function(resp) {
+            if (resp.status === 200) {
+              const writeStore = _this.$store.state.db
+                .transaction("equipmentList", "readwrite")
+                .objectStore("equipmentList");
 
-                  for (let i = 0; i < resp.body.length; i++) {
-                    writeStore.put(resp.body[i]);
-                  }
-                  _this.finished++;
-                  resolve();
-                } else {
-                  reject(_this.genErr("读取设备列表失败"));
-                }
-              })
-              .catch(function() {
-                reject(_this.genErr("读取设备列表失败"));
-              });
-          }
-        };
-        readStore.onerror = function() {
-          reject(_this.genErr("读取设备列表失败"));
-        };
+              for (let i = 0; i < resp.body.length; i++) {
+                writeStore.put(resp.body[i]);
+              }
+              _this.finished++;
+              resolve();
+            } else {
+              reject(_this.genErr("读取设备列表失败"));
+            }
+          })
+          .catch(function() {
+            reject(_this.genErr("读取设备列表失败"));
+          });
       });
     },
     initMapPolygon() {
       const _this = this;
       return new Promise(function(resolve, reject) {
-        const readStore = _this.$store.state.db
-          .transaction("mapPolygons")
-          .objectStore("mapPolygons")
-          .count();
-        readStore.onsuccess = function(e) {
-          const r = e.target.result;
-          if (r && r > 0) {
-            _this.finished++;
-            resolve();
-          } else {
-            _this.$http
-              .get(_this.apiHost + "/polygons", {
-                params: {
-                  projectID: _this.$store.state.projectID,
-                  timestamp: parseInt(new Date().getTime() / 1000)
-                }
-              })
-              .then(function(resp) {
-                if (resp.status === 200) {
-                  const writeStore = _this.$store.state.db
-                    .transaction("mapPolygons", "readwrite")
-                    .objectStore("mapPolygons");
-                  const mapPolygons = {};
-                  for (let i = 0; i < resp.body.length; i++) {
-                    if (
-                      resp.body[i].map_id &&
-                      resp.body[i].map_polygon_category_level !== "2"
-                    ) {
-                      if (!mapPolygons[resp.body[i].map_id]) {
-                        mapPolygons[resp.body[i].map_id] = [];
-                      }
-                      mapPolygons[resp.body[i].map_id].push(resp.body[i]);
-                    }
+        _this.$http
+          .get(_this.apiHost + "/polygons", {
+            params: {
+              projectID: _this.$store.state.projectID,
+              timestamp: parseInt(new Date().getTime() / 1000)
+            }
+          })
+          .then(function(resp) {
+            if (resp.status === 200) {
+              const writeStore = _this.$store.state.db
+                .transaction("mapPolygons", "readwrite")
+                .objectStore("mapPolygons");
+              const mapPolygons = {};
+              for (let i = 0; i < resp.body.length; i++) {
+                if (
+                  resp.body[i].map_id &&
+                  resp.body[i].map_polygon_category_level !== "2"
+                ) {
+                  if (!mapPolygons[resp.body[i].map_id]) {
+                    mapPolygons[resp.body[i].map_id] = [];
                   }
-                  for (let i in mapPolygons) {
-                    writeStore.put({ map_id: i, val: mapPolygons[i] });
-                  }
-                  _this.finished++;
-                  resolve();
-                } else {
-                  reject(_this.genErr("读取点位信息失败"));
+                  mapPolygons[resp.body[i].map_id].push(resp.body[i]);
                 }
-              })
-              .catch(function() {
-                reject(_this.genErr("读取点位信息失败"));
-              });
-          }
-        };
-        readStore.onerror = function() {
-          reject(_this.genErr("读取点位信息失败"));
-        };
+              }
+              for (let i in mapPolygons) {
+                writeStore.put({ map_id: i, val: mapPolygons[i] });
+              }
+              _this.finished++;
+              resolve();
+            } else {
+              reject(_this.genErr("读取点位信息失败"));
+            }
+          })
+          .catch(function() {
+            reject(_this.genErr("读取点位信息失败"));
+          });
       });
     },
     initMapList() {

@@ -9,6 +9,7 @@
         :disabled="loading.full"
         :error-messages="errMsg"
         no-data-text="没有数据"
+        dense=""
       ></v-autocomplete>
     </v-col>
   </v-layout>
@@ -28,6 +29,17 @@ export default {
       list: [],
       loading: {
         full: true
+      },
+      types: {
+        show: "展示屏",
+        infowithfinder: "指路信息屏",
+        info: "信息屏",
+        infoandfinder: "信息屏+指路仪",
+        projection: "投影设备",
+        guide: "导览屏",
+        infoandguider: "导览屏+信息屏",
+        index: "索引屏",
+        indexandfinder: "索引屏+指路仪"
       }
     };
   },
@@ -73,7 +85,12 @@ export default {
         const r = e.target.result;
         if (r) {
           for (let i = 0; i < r.length; i++) {
-            _this.list.push(r[i].equipment_code);
+            const _type = _this.types[r[i].equipment_type] || "";
+            const item = {
+              text: r[i].name + "[" + _type + "] " + r[i].equipment_code,
+              value: r[i].equipment_code
+            };
+            _this.list.push(item);
           }
         } else {
           _this.errMsg = "读取设备列表失败";

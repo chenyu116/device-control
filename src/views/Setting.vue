@@ -137,7 +137,8 @@ export default {
       },
       points: {},
       distributorId: [],
-      initDistributorId: []
+      initDistributorId: [],
+      polygons: {}
     };
   },
   mounted() {
@@ -147,6 +148,7 @@ export default {
     }
     this.initData();
     this.initMapListData();
+    this.initPolygons();
   },
   watch: {
     selectMapID(val) {
@@ -191,7 +193,7 @@ export default {
         try {
           setting = JSON.parse(setting);
           this.form.showMap = setting.showMap;
-          this.form.theme = setting.theme;
+          if (setting.theme) this.form.theme = setting.theme;
         } catch (e) {}
       }
       this.form.distributor_id = this.$store.state.deviceDetails.distributor_id;
@@ -200,7 +202,6 @@ export default {
           this.$store.state.deviceDetails.equipment_code,
         JSON.stringify(this.form)
       );
-      console.log("this.initDistributorId", this.form);
     },
     initMapListData() {
       const _this = this;
@@ -221,45 +222,72 @@ export default {
         }
       };
     },
-    loadPointsData() {
-      this.items = [];
-      this.loading.points = true;
+    initPolygons() {
       const _this = this;
       const readStore = _this.$store.state.db
         .transaction("mapPolygons")
         .objectStore("mapPolygons")
-        .get(_this.selectMapID);
+        .getAll();
       readStore.onsuccess = function(e) {
         const r = e.target.result;
-        if (r && r.val) {
-          for (let i = 0; i < r.val.length; i++) {
-            const item = {
-              map_id: r.val[i].map_id,
-              map_gid: r.val[i].map_gid,
-              name: r.val[i].point_name
-            };
-            _this.items.push({
-              text: r.val[i].point_name,
-              value: item
-            });
-            const initIndex = _this.initDistributorId.indexOf(r.val[i].map_gid);
-            if (initIndex > -1) {
-              _this.distributorId.push(item);
-              _this.initDistributorId.splice(initIndex, 1);
+        if (r && r.length > 0) {
+          for (let p in r) {
+            _this.polygons[r[p].map_id] = r[p].val;
+            for (let i = 0; i < r[p].val.length; i++) {
+              const initIndex = _this.initDistributorId.indexOf(
+                r[p].val[i].map_gid
+              );
+              if (initIndex > -1) {
+                const item = {
+                  map_id: r[p].val[i].map_id,
+                  map_gid: r[p].val[i].map_gid,
+                  name: r[p].val[i].point_name
+                };
+                _this.distributorId.push(item);
+                _this.initDistributorId.splice(initIndex, 1);
+              }
             }
           }
-          console.log("this.initDistributorId", _this.initDistributorId);
+        }
+      };
+    },
+    loadPointsData() {
+      this.items = [];
+      this.loading.points = true;
+      const _this = this;
+      if (this.polygons[this.selectMapID]) {
+        const r = this.polygons[this.selectMapID];
+        for (let i = 0; i < r.length; i++) {
+          const item = {
+            map_id: r[i].map_id,
+            map_gid: r[i].map_gid,
+            name: r[i].point_name
+          };
+          _this.items.push({
+            text: r[i].point_name,
+            value: item
+          });
         }
         setTimeout(() => {
           _this.loading.points = false;
         }, 500);
-      };
+      }
     },
-    sendOpt(options = {}) {
+    callbackUpdateEquipment(options) {
+      const d = Object.assign({}, this.$store.state.deviceDetails);
+      d.distributor_id = options.args.distributor_id;
+      const writeStore = this.$store.state.db
+        .transaction("equipmentList", "readwrite")
+        .objectStore("equipmentList");
+      writeStore.put(d);
+      this.$store.commit("updateDeviceDetails", d);
+    },
+    sendOpt(options = {}, callback) {
       if (!options.opt) {
         return;
       }
       const code = this.$store.state.deviceDetails.equipment_code;
+      // const code = "sp.server.queue.34e0dddf233916440a98a7b56aa44e67";
       options.project_id = this.$store.state.deviceDetails.equipment_project_id;
       options.code = code;
       if (options.confirm === true) {
@@ -267,22 +295,6 @@ export default {
       }
       if (typeof options.args !== "object") {
         options.args = {};
-      }
-      if (options.args.points && Object.keys(options.args.points).length > 0) {
-        const _p = options.args.points;
-        options.args["distributor_id"] = "";
-        for (let i in _p) {
-          for (let m = 0; m < _p[i].length; m++) {
-            if (_p[i][m].map_gid) {
-              options.args["distributor_id"] += "," + _p[i][m].map_gid;
-            }
-          }
-        }
-        options.args["distributor_id"] = options.args[
-          "distributor_id"
-        ].substring(1);
-        this.distributor_id = options.args["distributor_id"].split(",");
-        delete options.args.points;
       }
       const _this = this;
       this.loading.full = true;
@@ -293,12 +305,18 @@ export default {
         .then(
           function() {
             _this.opt.title = "配置发送成功";
+            if (typeof callback === "function") {
+              callback(options);
+            }
           },
           function(err) {
             if (!err.body) {
               err.body = "操作失败";
             }
             _this.opt.title = err.body;
+            if (err.status !== 500 && typeof callback === "function") {
+              callback(options);
+            }
           }
         )
         .finally(function() {
@@ -339,7 +357,7 @@ export default {
         args: this.form
       };
 
-      this.sendOpt(options);
+      this.sendOpt(options, this.callbackUpdateEquipment);
     }
   }
 };
