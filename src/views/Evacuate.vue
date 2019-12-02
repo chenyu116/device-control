@@ -107,7 +107,7 @@ export default {
      * @apiUse commonProperties
      * @apiGroup Command
      * @apiSuccessExample {json} 命令内容示例:
-     * {"opt":"enterExit","args":{}}
+     * {"opt":"enterExit","args":{"en_US":"evacuate","zh_CN":"紧急疏散中文内容"}}
      */
     enterExit() {
       if (this.content.zh_CN.trim() === "") {
