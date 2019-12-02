@@ -107,7 +107,9 @@ export default {
         guide: "导览屏",
         infoandguider: "导览屏+信息屏",
         index: "索引屏",
-        indexandfinder: "索引屏+指路仪"
+        indexandfinder: "索引屏+指路仪",
+        index_main: "主屏索引屏",
+        info_main: "主屏信息屏"
       }
     };
   },
