@@ -19,7 +19,8 @@ export default new Vuex.Store({
     themes: window.themes,
     debug: window.debug,
     allowCategoryLevel: window.allowCategoryLevel,
-    allowCategoryType: window.allowCategoryType
+    allowCategoryType: window.allowCategoryType,
+    excludeMaps: window.excludeMaps
   },
   mutations: {
     updateDbVersion(state, value) {

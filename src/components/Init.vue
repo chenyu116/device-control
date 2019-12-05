@@ -206,6 +206,9 @@ export default {
       });
     },
     polygonFilter(item) {
+      if (this.$store.state.excludeMaps.indexOf(item.map_id) > -1) {
+        return true;
+      }
       if (this.$store.state.allowCategoryLevel.length > 0) {
         if (
           this.$store.state.allowCategoryLevel.indexOf(
