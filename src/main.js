@@ -30,9 +30,13 @@ Vue.component("Progress", Progress);
 Vue.use(VueResource);
 Vue.http.options.emulateHTTP = true;
 Vue.http.options.timeout = 15000;
+Vue.http.options.headers = {};
+if (window.debug === true) {
+  Vue.http.options.headers["x-refresh"] = "1";
+}
 Vue.use(Confirm);
 Vue.use(Toast);
-const apiHost = "http://192.168.1.189:5022/v2";
+const apiHost = "https://api.signp.cn/v2";
 Vue.apiHost = apiHost;
 Vue.prototype.apiHost = apiHost;
 new Vue({

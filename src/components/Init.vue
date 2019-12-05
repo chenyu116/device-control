@@ -205,6 +205,27 @@ export default {
           });
       });
     },
+    polygonFilter(item) {
+      if (this.$store.state.allowCategoryLevel.length > 0) {
+        if (
+          this.$store.state.allowCategoryLevel.indexOf(
+            item.map_polygon_category_level
+          ) == -1
+        ) {
+          return false;
+        }
+      }
+      if (this.$store.state.allowCategoryType.length > 0) {
+        if (
+          this.$store.state.allowCategoryType.indexOf(
+            item.map_polygon_category_type
+          ) == -1
+        ) {
+          return false;
+        }
+      }
+      return true;
+    },
     initMapPolygon() {
       const _this = this;
       return new Promise(function(resolve, reject) {
@@ -222,10 +243,7 @@ export default {
                 .objectStore("mapPolygons");
               const mapPolygons = {};
               for (let i = 0; i < resp.body.length; i++) {
-                if (
-                  resp.body[i].map_id &&
-                  resp.body[i].map_polygon_category_level !== "2"
-                ) {
+                if (resp.body[i].map_id && _this.polygonFilter(resp.body[i])) {
                   if (!mapPolygons[resp.body[i].map_id]) {
                     mapPolygons[resp.body[i].map_id] = [];
                   }

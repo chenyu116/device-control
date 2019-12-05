@@ -157,7 +157,6 @@ export default {
     },
     distributorId: {
       handler(val) {
-        console.log("watch", val);
         const distributor_id = [];
         const points = {};
         for (let i = 0; i < val.length; i++) {
