@@ -1,6 +1,7 @@
 module.exports = {
   transpileDependencies: ["vuetify"],
-  assetsDir: "control",
-  publicPath: "https://o.signp.cn/",
+  assetsDir: process.env.NODE_ENV === "production" ? "control" : "",
+  publicPath:
+    process.env.NODE_ENV === "production" ? "https://o.signp.cn/" : "/",
   productionSourceMap: false
 };

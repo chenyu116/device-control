@@ -9,7 +9,7 @@ export default new Vuex.Store({
       opt: ""
     },
     project: {},
-    projectID: 135,
+    projectID: window.projectID,
     equipmentCode: null,
     deviceDetails: null,
     dataLoaded: false,

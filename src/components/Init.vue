@@ -31,13 +31,13 @@ export default {
     value: 0,
     err: {
       text: "",
-      retry: false
-    }
+      retry: false,
+    },
   }),
   watch: {
     finished(val) {
       this.value = parseInt((val / this.total) * 100);
-    }
+    },
   },
   created() {
     this.initData();
@@ -54,7 +54,7 @@ export default {
         this.initProject,
         this.initDeviceList,
         this.initMapPolygon,
-        this.initMapList
+        this.initMapList,
       ];
       let inProgress = false;
       const maxRetryTimes = 3;
@@ -132,7 +132,7 @@ export default {
             _db.createObjectStore("mapList", { keyPath: "map_id" });
             _db.createObjectStore("mapGroup", { keyPath: "map_id" });
             _db.createObjectStore("equipmentList", {
-              keyPath: "equipment_code"
+              keyPath: "equipment_code",
             });
           };
           openRequest.onsuccess = function(e) {
@@ -155,8 +155,8 @@ export default {
           .get(_this.apiHost + "/project", {
             params: {
               project_id: _this.$store.state.projectID,
-              timestamp: parseInt(new Date().getTime() / 1000)
-            }
+              timestamp: parseInt(new Date().getTime() / 1000),
+            },
           })
           .then(function(resp) {
             if (resp.status === 200) {
@@ -179,11 +179,11 @@ export default {
           .get(_this.apiHost + "/equipment/list", {
             params: {
               projectID: _this.$store.state.projectID,
-              timestamp: parseInt(new Date().getTime() / 1000)
+              timestamp: parseInt(new Date().getTime() / 1000),
             },
             headers: {
-              "x-refresh": "1"
-            }
+              "x-refresh": "1",
+            },
           })
           .then(function(resp) {
             if (resp.status === 200) {
@@ -209,19 +209,19 @@ export default {
       if (this.$store.state.excludeMaps.indexOf(item.map_id) > -1) {
         return true;
       }
-      if (this.$store.state.allowCategoryLevel.length > 0) {
+      if (this.$store.state.allowCategoryType.length > 0) {
         if (
-          this.$store.state.allowCategoryLevel.indexOf(
-            item.map_polygon_category_level
+          this.$store.state.allowCategoryType.indexOf(
+            item.map_polygon_category_type
           ) == -1
         ) {
           return false;
         }
       }
-      if (this.$store.state.allowCategoryType.length > 0) {
+      if (this.$store.state.allowCategoryLevel.length > 0) {
         if (
-          this.$store.state.allowCategoryType.indexOf(
-            item.map_polygon_category_type
+          this.$store.state.allowCategoryLevel.indexOf(
+            item.map_polygon_category_level
           ) == -1
         ) {
           return false;
@@ -236,8 +236,8 @@ export default {
           .get(_this.apiHost + "/polygons", {
             params: {
               projectID: _this.$store.state.projectID,
-              timestamp: parseInt(new Date().getTime() / 1000)
-            }
+              timestamp: parseInt(new Date().getTime() / 1000),
+            },
           })
           .then(function(resp) {
             if (resp.status === 200) {
@@ -284,8 +284,8 @@ export default {
               .get(_this.apiHost + "/map/list", {
                 params: {
                   projectID: _this.$store.state.projectID,
-                  timestamp: parseInt(new Date().getTime() / 1000)
-                }
+                  timestamp: parseInt(new Date().getTime() / 1000),
+                },
               })
               .then(function(resp) {
                 if (resp.status === 200) {
@@ -321,7 +321,7 @@ export default {
           reject(_this.genErr("读取地图信息失败"));
         };
       });
-    }
-  }
+    },
+  },
 };
 </script>
