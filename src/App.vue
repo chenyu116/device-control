@@ -10,7 +10,7 @@
       elevation="1"
       class="white--text"
       dense=""
-    >
+      >{{ $store.state.projectID }} |
       <div class="d-flex overflow-hidden" v-if="$store.state.equipmentCode">
         {{ $store.state.equipmentCode }}
       </div>
@@ -75,7 +75,7 @@
               <v-icon dense="">fa-info</v-icon>
             </v-list-item-icon>
             <v-list-item-content>
-              紧急疏散
+              紧急情况
             </v-list-item-content>
           </v-list-item>
           <v-list-item></v-list-item>

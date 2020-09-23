@@ -31,13 +31,13 @@ export default {
     value: 0,
     err: {
       text: "",
-      retry: false,
-    },
+      retry: false
+    }
   }),
   watch: {
     finished(val) {
       this.value = parseInt((val / this.total) * 100);
-    },
+    }
   },
   created() {
     this.initData();
@@ -54,7 +54,7 @@ export default {
         this.initProject,
         this.initDeviceList,
         this.initMapPolygon,
-        this.initMapList,
+        this.initMapList
       ];
       let inProgress = false;
       const maxRetryTimes = 3;
@@ -131,8 +131,9 @@ export default {
             _db.createObjectStore("mapPolygons", { keyPath: "map_id" });
             _db.createObjectStore("mapList", { keyPath: "map_id" });
             _db.createObjectStore("mapGroup", { keyPath: "map_id" });
+            _db.createObjectStore("project", { keyPath: "project_id" });
             _db.createObjectStore("equipmentList", {
-              keyPath: "equipment_code",
+              keyPath: "equipment_code"
             });
           };
           openRequest.onsuccess = function(e) {
@@ -151,58 +152,87 @@ export default {
     initProject() {
       const _this = this;
       return new Promise(function(resolve, reject) {
-        _this.$http
-          .get(_this.apiHost + "/project", {
-            params: {
-              project_id: _this.$store.state.projectID,
-              timestamp: parseInt(new Date().getTime() / 1000),
-            },
-          })
-          .then(function(resp) {
-            if (resp.status === 200) {
-              _this.$store.commit("updateProject", resp.body);
-              _this.finished++;
-              resolve();
-            } else {
-              reject(_this.genErr("读取项目详情失败"));
-            }
-          })
-          .catch(function() {
-            reject(_this.genErr("读取项目详情失败"));
-          });
+        const readStore = _this.$store.state.db
+          .transaction("project")
+          .objectStore("project")
+          .get(_this.$store.state.projectID + "");
+        readStore.onsuccess = function(e) {
+          const r = e.target.result;
+          if (r) {
+            _this.$store.commit("updateProject", r);
+            _this.finished++;
+            resolve();
+          } else {
+            _this.$http
+              .get(_this.apiHost + "/project", {
+                params: {
+                  project_id: _this.$store.state.projectID,
+                  timestamp: parseInt(new Date().getTime() / 1000)
+                }
+              })
+              .then(function(resp) {
+                if (resp.status === 200) {
+                  _this.$store.commit("updateProject", resp.body);
+                  const writeStore = _this.$store.state.db
+                    .transaction("project", "readwrite")
+                    .objectStore("project");
+                  writeStore.put(resp.body);
+                  _this.finished++;
+                  resolve();
+                } else {
+                  reject(_this.genErr("读取项目详情失败"));
+                }
+              })
+              .catch(function() {
+                reject(_this.genErr("读取项目详情失败"));
+              });
+          }
+        };
       });
     },
     initDeviceList() {
       const _this = this;
       return new Promise(function(resolve, reject) {
-        _this.$http
-          .get(_this.apiHost + "/equipment/list", {
-            params: {
-              projectID: _this.$store.state.projectID,
-              timestamp: parseInt(new Date().getTime() / 1000),
-            },
-            headers: {
-              "x-refresh": "1",
-            },
-          })
-          .then(function(resp) {
-            if (resp.status === 200) {
-              const writeStore = _this.$store.state.db
-                .transaction("equipmentList", "readwrite")
-                .objectStore("equipmentList");
+        const readStore = _this.$store.state.db
+          .transaction("equipmentList")
+          .objectStore("equipmentList")
+          .getAll();
+        readStore.onsuccess = function(e) {
+          const r = e.target.result;
+          if (r && r.length > 0) {
+            _this.finished++;
+            resolve();
+          } else {
+            _this.$http
+              .get(_this.apiHost + "/equipment/list", {
+                params: {
+                  projectID: _this.$store.state.projectID,
+                  timestamp: parseInt(new Date().getTime() / 1000)
+                },
+                headers: {
+                  "x-refresh": "1"
+                }
+              })
+              .then(function(resp) {
+                if (resp.status === 200) {
+                  const writeStore = _this.$store.state.db
+                    .transaction("equipmentList", "readwrite")
+                    .objectStore("equipmentList");
 
-              for (let i = 0; i < resp.body.length; i++) {
-                writeStore.put(resp.body[i]);
-              }
-              _this.finished++;
-              resolve();
-            } else {
-              reject(_this.genErr("读取设备列表失败"));
-            }
-          })
-          .catch(function() {
-            reject(_this.genErr("读取设备列表失败"));
-          });
+                  for (let i = 0; i < resp.body.length; i++) {
+                    writeStore.put(resp.body[i]);
+                  }
+                  _this.finished++;
+                  resolve();
+                } else {
+                  reject(_this.genErr("读取设备列表失败"));
+                }
+              })
+              .catch(function() {
+                reject(_this.genErr("读取设备列表失败"));
+              });
+          }
+        };
       });
     },
     polygonFilter(item) {
@@ -232,39 +262,54 @@ export default {
     initMapPolygon() {
       const _this = this;
       return new Promise(function(resolve, reject) {
-        _this.$http
-          .get(_this.apiHost + "/polygons", {
-            params: {
-              projectID: _this.$store.state.projectID,
-              timestamp: parseInt(new Date().getTime() / 1000),
-            },
-          })
-          .then(function(resp) {
-            if (resp.status === 200) {
-              const writeStore = _this.$store.state.db
-                .transaction("mapPolygons", "readwrite")
-                .objectStore("mapPolygons");
-              const mapPolygons = {};
-              for (let i = 0; i < resp.body.length; i++) {
-                if (resp.body[i].map_id && _this.polygonFilter(resp.body[i])) {
-                  if (!mapPolygons[resp.body[i].map_id]) {
-                    mapPolygons[resp.body[i].map_id] = [];
-                  }
-                  mapPolygons[resp.body[i].map_id].push(resp.body[i]);
+        const readStore = _this.$store.state.db
+          .transaction("mapPolygons")
+          .objectStore("mapPolygons")
+          .getAll();
+        readStore.onsuccess = function(e) {
+          const r = e.target.result;
+          if (r && r.length > 0) {
+            _this.finished++;
+            resolve();
+          } else {
+            _this.$http
+              .get(_this.apiHost + "/polygons", {
+                params: {
+                  projectID: _this.$store.state.projectID,
+                  timestamp: parseInt(new Date().getTime() / 1000)
                 }
-              }
-              for (let i in mapPolygons) {
-                writeStore.put({ map_id: i, val: mapPolygons[i] });
-              }
-              _this.finished++;
-              resolve();
-            } else {
-              reject(_this.genErr("读取点位信息失败"));
-            }
-          })
-          .catch(function() {
-            reject(_this.genErr("读取点位信息失败"));
-          });
+              })
+              .then(function(resp) {
+                if (resp.status === 200) {
+                  const writeStore = _this.$store.state.db
+                    .transaction("mapPolygons", "readwrite")
+                    .objectStore("mapPolygons");
+                  const mapPolygons = {};
+                  for (let i = 0; i < resp.body.length; i++) {
+                    if (
+                      resp.body[i].map_id &&
+                      _this.polygonFilter(resp.body[i])
+                    ) {
+                      if (!mapPolygons[resp.body[i].map_id]) {
+                        mapPolygons[resp.body[i].map_id] = [];
+                      }
+                      mapPolygons[resp.body[i].map_id].push(resp.body[i]);
+                    }
+                  }
+                  for (let i in mapPolygons) {
+                    writeStore.put({ map_id: i, val: mapPolygons[i] });
+                  }
+                  _this.finished++;
+                  resolve();
+                } else {
+                  reject(_this.genErr("读取点位信息失败"));
+                }
+              })
+              .catch(function() {
+                reject(_this.genErr("读取点位信息失败"));
+              });
+          }
+        };
       });
     },
     initMapList() {
@@ -284,8 +329,8 @@ export default {
               .get(_this.apiHost + "/map/list", {
                 params: {
                   projectID: _this.$store.state.projectID,
-                  timestamp: parseInt(new Date().getTime() / 1000),
-                },
+                  timestamp: parseInt(new Date().getTime() / 1000)
+                }
               })
               .then(function(resp) {
                 if (resp.status === 200) {
@@ -321,7 +366,7 @@ export default {
           reject(_this.genErr("读取地图信息失败"));
         };
       });
-    },
-  },
+    }
+  }
 };
 </script>

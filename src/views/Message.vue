@@ -141,22 +141,20 @@ export default {
       this.opt.finished = false;
       this.$http
         .post(this.apiHost + "/opt", options)
-        .then(
-          function() {
-            _this.opt.title = "消息发送成功";
-          },
-          function(err) {
-            if (!err.body) {
-              err.body = "操作失败";
-            }
-            _this.opt.title = err.body;
+        .then(function() {
+          _this.opt.title = "消息发送成功";
+        })
+        .catch(function(err) {
+          if (!err.body) {
+            err.body = "操作失败，请重试";
           }
-        )
+          _this.opt.title = err.body;
+        })
         .finally(function() {
           _this.opt.finished = true;
           setTimeout(function() {
             _this.loading.full = false;
-          }, 3000);
+          }, 1500);
         });
     }
   }

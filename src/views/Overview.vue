@@ -161,7 +161,7 @@ export default {
           _this.opt.finished = true;
           setTimeout(function() {
             _this.loading.full = false;
-          }, 3000);
+          }, 1500);
         });
     },
     /**
@@ -227,30 +227,28 @@ export default {
         .get(this.apiHost + "/equipment/queue", {
           params: { code: this.$store.state.deviceDetails.equipment_code }
         })
-        .then(
-          function(resp) {
-            if (resp.body) {
-              if (resp.body.consumers > 0) {
-                _this.status.text = "在线";
-                _this.status.class = "green--text";
-              } else {
-                _this.status.text = "离线";
-                _this.status.class = "red--text";
-              }
+        .then(function(resp) {
+          if (resp.body) {
+            if (resp.body.consumers > 0) {
+              _this.status.text = "在线";
+              _this.status.class = "green--text";
             } else {
-              _this.status.text = "无设备信息";
-              _this.status.class = "";
+              _this.status.text = "离线";
+              _this.status.class = "red--text";
             }
-          },
-          function() {
-            _this.status.text = "读取状态失败";
+          } else {
+            _this.status.text = "无设备信息";
             _this.status.class = "";
           }
-        )
+        })
+        .catch(function() {
+          _this.status.text = "读取状态失败";
+          _this.status.class = "";
+        })
         .finally(function() {
           setTimeout(function() {
             _this.loading.getStatus = false;
-          }, 1000);
+          }, 500);
         });
     }
   }

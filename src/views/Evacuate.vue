@@ -3,11 +3,10 @@
     <Progress v-if="loading.full" :opt="opt"></Progress>
     <v-col cols="12" v-if="!$store.state.deviceDetails">
       <v-card flat="">
-        <p class="title font-weight-bold">紧急疏散</p>
+        <p class="title font-weight-bold">紧急情况</p>
         <v-textarea
           v-if="$store.state.project.project_emergency_evacuation === '0'"
           label="中文内容"
-          :error="true"
           outlined=""
           v-model="content.zh_CN"
         ></v-textarea>
@@ -27,7 +26,7 @@
             color="red"
           >
             <v-icon left dense="">fa-running</v-icon>
-            紧急疏散
+            紧急情况
           </v-btn>
           <v-btn
             v-else-if="
@@ -37,12 +36,12 @@
             class="subtitle-1 mt-5 white--text"
             block=""
             @click="
-              $confirm({ title: '确定 退出紧急疏散', callback: quitExit })
+              $confirm({ title: '确定 退出紧急情况', callback: quitExit })
             "
             color="red"
           >
             <v-icon left dense="">fa-running</v-icon>
-            退出紧急疏散
+            退出紧急情况
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -53,7 +52,9 @@
 <script>
 export default {
   components: {},
-  mounted() {},
+  mounted() {
+    this.loadDeviceList();
+  },
   data() {
     return {
       list: [],
@@ -102,21 +103,21 @@ export default {
       this.content = { zh_CN: "", en_US: "" };
     },
     /**
-     * @api {rabbitmq message} enterExit 开启紧急疏散
+     * @api {rabbitmq message} enterExit 开启紧急情况
      * @apiVersion 0.1.0
      * @apiUse commonProperties
      * @apiGroup Command
      * @apiSuccessExample {json} 命令内容示例:
-     * {"opt":"enterExit","args":{"en_US":"evacuate","zh_CN":"紧急疏散中文内容"}}
+     * {"opt":"enterExit","args":{"en_US":"evacuate","zh_CN":"紧急情况中文内容"}}
      */
     enterExit() {
-      if (this.content.zh_CN.trim() === "") {
-        alert("中文内容必须填写");
-        return;
-      }
+      // if (this.content.zh_CN.trim() === "") {
+      //   alert("中文内容必须填写");
+      //   return;
+      // }
       const _this = this;
       this.$confirm({
-        title: "确定 紧急疏散",
+        title: "确定进入紧急情况",
         callback: function() {
           const options = Object.assign({}, _this.options);
           options.opt = "enterExit";
@@ -126,7 +127,7 @@ export default {
       });
     },
     /**
-     * @api {rabbitmq message} quitExit 退出紧急疏散
+     * @api {rabbitmq message} quitExit 退出紧急情况
      * @apiVersion 0.1.0
      * @apiUse commonProperties
      * @apiGroup Command
@@ -142,7 +143,16 @@ export default {
       if (!options.opt) {
         return;
       }
-      options.code = "all";
+      const _this = this;
+      if (this.list.length === 0) {
+        this.loading.full = true;
+        this.opt.title = "设备列表读取失败！";
+        setTimeout(function() {
+          _this.loading.full = false;
+        }, 2000);
+        return;
+      }
+      options.confirm = false;
       options.project_id = this.$store.state.project.project_id;
       if (typeof options.args !== "object") {
         options.args = {};
@@ -150,35 +160,54 @@ export default {
       if (options.args.duration) {
         options.args.duration = options.args.duration * 1000;
       }
-      const _this = this;
+      options.code = this.list.join(",");
+
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
       this.$http
         .post(this.apiHost + "/opt", options)
-        .then(
-          function() {
-            _this.opt.title = "命令发送成功";
-            if (typeof callback === "function") {
-              callback(options);
-            }
-          },
-          function(err) {
-            if (!err.body) {
-              err.body = "操作失败";
-            }
-            _this.opt.title = err.body;
-            if (err.status !== 500 && typeof callback === "function") {
-              callback(options);
-            }
+        .then(function() {
+          _this.opt.title = "命令已发送";
+          if (typeof callback === "function") {
+            callback(options);
           }
-        )
+        })
+        .catch(function(err) {
+          if (!err.body) {
+            err.body = "操作失败，请重试";
+          }
+          _this.opt.title = err.body;
+          if (err.status !== 500 && typeof callback === "function") {
+            callback(options);
+          }
+        })
         .finally(function() {
           _this.opt.finished = true;
           setTimeout(function() {
             _this.loading.full = false;
-          }, 3000);
+          }, 2000);
         });
+    },
+    loadDeviceList() {
+      const _this = this;
+      const readStore = _this.$store.state.db
+        .transaction("equipmentList")
+        .objectStore("equipmentList")
+        .getAll();
+      readStore.onsuccess = function(e) {
+        const r = e.target.result;
+        if (r) {
+          for (let i = 0; i < r.length; i++) {
+            // const _type = _this.eTypes[r[i].equipment_type] || "";
+            // const item = {
+            //   text: r[i].name + "[" + _type + "] " + r[i].equipment_code,
+            //   value: r[i].equipment_code
+            // };
+            _this.list.push(r[i].equipment_code);
+          }
+        }
+      };
     }
   }
 };

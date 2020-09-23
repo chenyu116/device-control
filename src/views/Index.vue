@@ -31,7 +31,7 @@
         replace=""
       >
         <v-icon left dense="">fa-file-import</v-icon>
-        紧急疏散
+        紧急情况
       </v-btn>
     </v-col>
   </v-layout>
@@ -105,17 +105,24 @@ export default {
         .transaction("equipmentList")
         .objectStore("equipmentList")
         .getAll();
+      const list = [];
       readStore.onsuccess = function(e) {
         const r = e.target.result;
         if (r) {
           for (let i = 0; i < r.length; i++) {
-            const _type = _this.types[r[i].equipment_type] || "";
+            // const _type = _this.types[r[i].equipment_type] || "";
             const item = {
-              text: r[i].name + "[" + _type + "] " + r[i].equipment_code,
+              text:
+                r[i].name +
+                "[" +
+                r[i].equipment_remark +
+                "] " +
+                r[i].equipment_code,
               value: r[i].equipment_code
             };
-            _this.list.push(item);
+            list.push(item);
           }
+          _this.list = list;
         } else {
           _this.errMsg = "读取设备列表失败";
         }
