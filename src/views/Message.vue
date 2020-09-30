@@ -125,9 +125,9 @@ export default {
 
       const code = this.$store.state.deviceDetails.equipment_code;
       options.project_id = this.$store.state.deviceDetails.equipment_project_id;
-      options.code = code;
-      if (options.confirm === true) {
-        options.messageId = code + "-" + new Date().getTime();
+      options.codes = code + ",test,test1";
+      for (let i = 0; i < 100; i++) {
+        options.codes += ",t-" + i;
       }
       if (typeof options.args !== "object") {
         options.args = {};
@@ -135,12 +135,19 @@ export default {
       if (options.args.duration) {
         options.args.duration = options.args.duration * 1000;
       }
+      options.payload = JSON.stringify({
+        opt: options.opt,
+        args: options.args
+      });
+      options.token = this.$store.state.token;
       const _this = this;
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
       this.$http
-        .post(this.apiHost + "/opt", options)
+        // .post(this.apiHost + "/opt", options)
+        // .post("http://grpc.signp.cn:6002/v3/push", options)
+        .post("http://192.168.1.232:5024/v3/push", options)
         .then(function() {
           _this.opt.title = "消息发送成功";
         })

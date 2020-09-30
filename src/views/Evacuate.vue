@@ -160,13 +160,16 @@ export default {
       if (options.args.duration) {
         options.args.duration = options.args.duration * 1000;
       }
-      options.code = this.list.join(",");
+      options.codes = this.list.join(",");
+      options.payload = JSON.stringify(options.args);
+      console.log(options);
+      return;
 
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
       this.$http
-        .post(this.apiHost + "/opt", options)
+        // .post(this.apiHost + "/opt", options)
         .then(function() {
           _this.opt.title = "命令已发送";
           if (typeof callback === "function") {

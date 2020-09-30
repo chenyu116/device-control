@@ -113,9 +113,8 @@ export default {
             // const _type = _this.types[r[i].equipment_type] || "";
             const item = {
               text:
-                r[i].name +
                 "[" +
-                r[i].equipment_remark +
+                (r[i].equipment_remark || " --- ") +
                 "] " +
                 r[i].equipment_code,
               value: r[i].equipment_code

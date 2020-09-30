@@ -6,7 +6,7 @@
         <p class="title font-weight-bold">设置</p>
         <v-container fluid>
           <v-switch
-            v-model="form.showMap"
+            v-model="form.show_map"
             inset
             label="是否显示地图"
           ></v-switch>
@@ -54,7 +54,7 @@
                     class="mb-4"
                     v-if="mapList.length > 0"
                     :loading="loading.points"
-                    :disabled="loading.points || !selectMapID"
+                    :disabled="loading.points"
                     v-model="distributorId[n - 1]"
                     :items="items[n - 1]"
                     label="点位选择"
@@ -152,8 +152,8 @@
           <p class=" mt-1">
             <v-chip color="white" label="">
               <v-icon left size="15" color="red">fa-map</v-icon>
-              地图显示：<span v-if="form.showMap">是</span
-              ><span v-if="!form.showMap">否</span>
+              地图显示：<span v-if="form.show_map">是</span
+              ><span v-if="!form.show_map">否</span>
             </v-chip>
           </p>
           <p class=" mt-1">
@@ -210,7 +210,7 @@ export default {
       previewPoints: {},
       selectMapID: [],
       form: {
-        showMap: false,
+        show_map: false,
         theme: "",
         distributor_id: "",
         rotate: 0
@@ -226,9 +226,8 @@ export default {
       faces: 4,
       currentFace: 0,
       rules: [
-        value => (!!value && !isNaN(parseInt(value))) || "请填写角度",
         value =>
-          (value && parseInt(value) < 360 && parseInt(value) >= 0) ||
+          (parseInt(value) < 360 && parseInt(value) >= 0) ||
           "角度在 0 ~ 359 之间"
       ]
     };
@@ -240,9 +239,16 @@ export default {
     }
     const _this = this;
     this.initData();
-    this.initMapListData().then(function() {
-      _this.initPolygons();
-    });
+    this.initMapData()
+      .then(function(mapDetails) {
+        return _this.initMapListData(mapDetails);
+      })
+      .then(function() {
+        return _this.initPolygons();
+      })
+      .then(function() {
+        console.log("_this.polygons", _this.polygons);
+      });
 
     document.body.onselectstart = function() {
       return false;
@@ -250,39 +256,35 @@ export default {
   },
   watch: {
     selectMapID(val) {
-      if (val === "") return;
+      console.log("watch selectMapID", val);
+      if (!val[this.currentFace]) return;
       this.loadPointsData();
     },
     distributorId: {
       handler(val) {
         console.log("watch distributorId", val);
         if (!val[this.currentFace]) return;
-        for (let m = 0; m < this.points[this.currentFace].length; m++) {
-          this.points[this.currentFace][m].val = [];
-        }
-        for (let i = 0; i < val[this.currentFace].length; i++) {
-          const v = val[this.currentFace][i];
-          for (let m = 0; m < this.points[this.currentFace].length; m++) {
-            if (v.map_id != this.points[this.currentFace][m].map_id) continue;
-            if (v.map_gid) {
-              this.points[this.currentFace][m].val.push(v);
-              break;
-            }
-          }
-        }
+        // for (let m = 0; m < this.points[this.currentFace].length; m++) {
+        //   this.points[this.currentFace][m].val = [];
+        // }
+        // for (let i = 0; i < val[this.currentFace].length; i++) {
+        //   const v = val[this.currentFace][i];
+        //   for (let m = 0; m < this.points[this.currentFace].length; m++) {
+        //     if (v.map_id != this.points[this.currentFace][m].map_id) continue;
+        //     if (v.map_gid) {
+        //       this.points[this.currentFace][m].val.push(v);
+        //       break;
+        //     }
+        //   }
+        // }
         const newDistributorId = [];
-        for (let i = 0; i < val.length; i++) {
-          if (val[i].length === 0) {
-            newDistributorId.push("");
-          } else {
-            const temp = [];
-            for (let l = 0; l < val[i].length; l++) {
-              temp.push(val[i][l].map_gid);
-            }
-            newDistributorId[i] = temp.join(",");
-          }
+        for (let i = 0; i < val[this.currentFace].length; i++) {
+          newDistributorId.push(val[this.currentFace][i].map_gid);
         }
-        this.form.distributor_id = JSON.stringify(newDistributorId);
+        const dis = Object.assign([], val);
+
+        dis[this.currentFace] = newDistributorId.join(",");
+        this.form.distributor_id = JSON.stringify(dis);
         localStorage.setItem(
           "deviceControl:setting-" +
             this.$store.state.deviceDetails.equipment_code,
@@ -356,39 +358,60 @@ export default {
 
       for (let i = 0; i < this.faces; i++) {
         this.selectMapID.push("");
-        this.distributorId.push([]);
-        this.points.push([]);
-        this.items.push([]);
+        this.distributorId[i] = [];
+        this.points[i] = [];
+        this.items[i] = [];
       }
+
+      console.log(
+        "this.distributorId",
+        this.$store.state.deviceDetails.distributor_id
+      );
+      console.log("this.initDistributorId", this.initDistributorId);
       this.form.theme =
         this.$store.state.themes.length > 0
           ? this.$store.state.themes[0].value
           : "";
-      let setting = this.$store.state.deviceDetails.setting;
-      if (setting) {
-        try {
-          setting = JSON.parse(setting);
-          this.form.showMap = setting.showMap;
-          if (setting.theme) this.form.theme = setting.theme;
-        } catch (e) {}
-      }
-      this.form.distributor_id = this.initDistributorId;
+      // try {
+      //   const setting = JSON.parse(this.$store.state.deviceDetails.setting);
+      //   console.log("setting", setting);
+      //   this.form.show_map = setting.show_map === 1 ? true : false;
+      //   if (setting.theme) this.form.theme = setting.theme;
+      // } catch (e) {}
+      this.form.distributor_id = JSON.stringify(this.initDistributorId);
 
       // const form = {
       //   theme: this.form.theme,
-      //   showMap: this.form.showMap,
+      //   show_map: this.form.show_map,
       //   distributor_id: this.form.distributor_id
       // };
 
       const value = JSON.stringify(this.form);
-
       localStorage.setItem(
         "deviceControl:setting-" +
           this.$store.state.deviceDetails.equipment_code,
         value
       );
     },
-    initMapListData() {
+    initMapData() {
+      const _this = this;
+      console.log(this.$store.state.deviceDetails);
+      return new Promise(function(resolve, reject) {
+        const readStore = _this.$store.state.db
+          .transaction("mapList")
+          .objectStore("mapList")
+          .get(_this.$store.state.deviceDetails.equipment_map_id + "");
+        readStore.onsuccess = function(e) {
+          const r = e.target.result;
+          if (r) {
+            resolve(r);
+          } else {
+            reject(new Error("地图信息加载失败"));
+          }
+        };
+      });
+    },
+    initMapListData(mapDetails) {
       const _this = this;
       return new Promise(function(resolve) {
         _this.mapList = [];
@@ -397,13 +420,14 @@ export default {
         const readStore = _this.$store.state.db
           .transaction("mapGroup")
           .objectStore("mapGroup")
-          .get(_this.$store.state.deviceDetails.map_pid);
+          .get(mapDetails.map_pid);
         readStore.onsuccess = function(e) {
           const r = e.target.result;
           if (r && r.val) {
             for (let i = 0; i < r.val.length; i++) {
               _this.maps[r.val[i].map_id] = r.val[i].detailed_name;
               mapList.push({
+                map_id: r.val[i].map_id,
                 text: r.val[i].detailed_name,
                 value: r.val[i].map_id,
                 sortOrder: r.val[i].map_sort_order
@@ -429,46 +453,62 @@ export default {
     },
     initPolygons() {
       const _this = this;
-      const readStore = _this.$store.state.db
-        .transaction("mapPolygons")
-        .objectStore("mapPolygons")
-        .getAll();
-      _this.polygons = {};
-      readStore.onsuccess = function(e) {
-        const r = e.target.result;
-        if (r && r.length > 0) {
-          // console.log("initIndex", r);
-          for (let p in r) {
-            _this.polygons[r[p].map_id] = r[p].val;
-            for (let m = 0; m < _this.initDistributorId.length; m++) {
-              if (_this.initDistributorId[m] == "") continue;
-              const idSplit = _this.initDistributorId[m].split(",");
-              for (let i = 0; i < r[p].val.length; i++) {
-                if (idSplit.indexOf(r[p].val[i].map_gid) > -1) {
-                  const item = {
-                    map_id: r[p].val[i].map_id,
-                    map_gid: r[p].val[i].map_gid,
-                    name: r[p].val[i].name
-                  };
-                  _this.distributorId[m].push(item);
-                  for (let l = 0; l < _this.points[m].length; l++) {
-                    if (_this.points[m][l].map_id == item.map_id) {
-                      _this.points[m][l].val.push(item);
+      this.polygons = {};
+      return Promise.map(this.mapList, function(map) {
+        const mapId = "" + map.map_id;
+        console.log("initPolygons mapId", mapId);
+        return new Promise(function(resolve) {
+          const readStore = _this.$store.state.db
+            .transaction("mapPolygons")
+            .objectStore("mapPolygons")
+            .get(map.map_id + "");
+          readStore.onsuccess = function(e) {
+            const r = e.target.result;
+            if (r && r.val && r.val.length > 0) {
+              for (let m = 0; m < _this.initDistributorId.length; m++) {
+                if (!_this.polygons[m]) {
+                  _this.polygons[m] = {};
+                }
+                if (!_this.polygons[m][mapId]) {
+                  _this.polygons[m][mapId] = [];
+                }
+                if (_this.initDistributorId[m] == "") continue;
+                const idSplit = _this.initDistributorId[m].split(",");
+                for (let i = 0; i < idSplit.length; i++) {
+                  for (let x = 0; x < r.val.length; x++) {
+                    if (idSplit[i] == r.val[x].map_gid) {
+                      const item = {
+                        map_id: r.val[x].map_id,
+                        map_gid: r.val[x].map_gid,
+                        name: r.val[x].name
+                      };
+                      _this.distributorId[m].push(item);
                       break;
                     }
                   }
                 }
+                for (let x = 0; x < r.val.length; x++) {
+                  const item = {
+                    map_id: r.val[x].map_id,
+                    map_gid: r.val[x].map_gid,
+                    name: r.val[x].name
+                  };
+                  _this.polygons[m][mapId].push(item);
+                }
               }
             }
-          }
-        }
-      };
+            resolve();
+          };
+        });
+      });
     },
     loadPointsData() {
       this.items[this.currentFace] = [];
       this.loading.points = true;
       const _this = this;
-      const r = this.polygons[this.selectMapID[this.currentFace]];
+      const r = this.polygons[this.currentFace][
+        this.selectMapID[this.currentFace] + ""
+      ];
       if (r) {
         for (let i = 0; i < r.length; i++) {
           const item = {
@@ -502,26 +542,32 @@ export default {
       const code = this.$store.state.deviceDetails.equipment_code;
       // const code = "sp.server.queue.34e0dddf233916440a98a7b56aa44e67";
       options.project_id = this.$store.state.deviceDetails.equipment_project_id;
-      options.code = code;
-      if (options.confirm === true) {
-        options.messageId = code + "-" + new Date().getTime();
-      }
+      options.codes = code;
       if (typeof options.args !== "object") {
         options.args = {};
       }
+      options.payload = JSON.stringify({
+        opt: options.opt,
+        args: options.args
+      });
+      options.token = this.$store.state.token;
       const _this = this;
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
       this.$http
-        .post(this.apiHost + "/opt", options)
-        .then(function() {
+        // .post(this.apiHost + "/opt", options)
+        .post("http://grpc.signp.cn:6002/v3/push", options)
+        // .post("http://192.168.1.232:5024/v3/push", options)
+        .then(function(res) {
+          console.log(res);
           _this.opt.title = "配置发送成功";
           if (typeof callback === "function") {
             callback(options);
           }
         })
         .catch(function(err) {
+          console.log(err);
           if (!err.body) {
             err.body = "操作失败，请重试";
           }
@@ -548,7 +594,7 @@ export default {
      * @apiParam (properties) {Json} Body 命令内容
      * @apiGroup Command
      * @apiSuccessExample {json} 命令内容示例:
-     * {"opt":"updateSetting","args":{"distributor_id":"457_301,457_300,457_4,457_2,459_4,459_3,459_15,459_13","showMap":true,"theme":"theme_1"}}
+     * {"opt":"updateSetting","args":{"distributor_id":"457_301,457_300,457_4,457_2,459_4,459_3,459_15,459_13","show_map":true,"theme":"theme_1"}}
      */
     updateSetting() {
       let args = JSON.parse(
@@ -561,6 +607,7 @@ export default {
         this.$toast.error("配置信息加载失败");
         return;
       }
+      args.show_map = this.form.show_map ? 1 : 0;
       try {
         const dis = JSON.parse(args.distributor_id);
         if (this.$store.state.deviceDetails.equipment_type != "led") {
@@ -589,7 +636,31 @@ export default {
       this.sendOpt(options, this.callbackUpdateEquipment);
     },
     showPreview() {
-      this.previewPoints = this.points[this.currentFace];
+      const distributor_id = this.distributorId[this.currentFace];
+      const polygons = this.polygons[this.currentFace];
+      this.previewPoints = [];
+      console.log("distributor_id", distributor_id);
+
+      for (let m = 0; m < this.mapList.length; m++) {
+        if (!this.previewPoints[m]) {
+          this.previewPoints[m] = {
+            map_name: this.mapList[m].text,
+            val: []
+          };
+        }
+        for (let i = 0; i < distributor_id.length; i++) {
+          for (let p = 0; p < polygons[this.mapList[m].map_id].length; p++) {
+            const polygon = polygons[this.mapList[m].map_id][p];
+            if (distributor_id[i].map_gid == polygon.map_gid) {
+              this.previewPoints[m].val.push(polygon);
+              break;
+            }
+          }
+        }
+      }
+      console.log(this.previewPoints);
+      // this.previewPoints = this.points[this.currentFace];
+
       this.viewSetting = true;
     }
   }

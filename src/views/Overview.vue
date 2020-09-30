@@ -12,16 +12,13 @@
             >
           </p>
           <p class="black--text full-width">
-            位置名称：{{ $store.state.deviceDetails.map_name }}
-            {{ $store.state.deviceDetails.name }}
+            地图编号：{{ $store.state.deviceDetails.equipment_map_id }}
           </p>
           <p class="black--text full-width">
             类型：{{ types[$store.state.deviceDetails.equipment_type] }}
           </p>
           <p class="black--text full-width">
-            mapGid：{{ $store.state.deviceDetails.equipment_map_id }}_{{
-              $store.state.deviceDetails.gid
-            }}
+            点位编号：{{ $store.state.deviceDetails.equipment_point_id }}
           </p>
           <p class="black--text full-width">
             旋转角度：{{ $store.state.deviceDetails.equipment_rotate }}
@@ -96,6 +93,11 @@ export default {
           title: "重启前端应用",
           icon: "fa-redo-alt",
           callback: this.restartApp
+        },
+        {
+          title: "进入设置",
+          icon: "fa-redo-alt",
+          callback: this.enterSetting
         }
       ],
       types: {
@@ -127,19 +129,25 @@ export default {
       }
       const code = this.$store.state.deviceDetails.equipment_code;
       options.project_id = this.$store.state.deviceDetails.equipment_project_id;
-      options.code = code;
+      options.codes = code;
       if (options.confirm === true) {
         options.messageId = code + "-" + new Date().getTime();
       }
       if (typeof options.args !== "object") {
         options.args = {};
       }
+      options.payload = JSON.stringify({
+        opt: options.opt
+      });
+      options.token = this.$store.state.token;
       const _this = this;
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
       this.$http
-        .post(this.apiHost + "/opt", options)
+        // .post(this.apiHost + "/opt", options)
+        .post("http://grpc.signp.cn:6002/v3/push", options)
+        // .post("http://192.168.1.232:5024/v3/push", options)
         .then(
           function() {
             _this.opt.title = "命令发送成功";
@@ -220,16 +228,34 @@ export default {
       options.opt = "restartApp";
       this.sendOpt(options);
     },
+    /**
+     * @api {rabbitmq message} enterSetting 进入设置
+     * @apiVersion 0.1.0
+     * @apiUse commonProperties
+     * @apiGroup Command
+     * @apiSuccessExample {json} 命令内容示例:
+     * {"opt":"enterSetting","args":{}}
+     */
+    enterSetting() {
+      console.log("enterSetting");
+      const options = Object.assign({}, this.options);
+      options.opt = "enterSetting";
+      this.sendOpt(options);
+    },
     getStatus() {
       const _this = this;
       this.loading.getStatus = true;
       this.$http
-        .get(this.apiHost + "/equipment/queue", {
-          params: { code: this.$store.state.deviceDetails.equipment_code }
+        .post("http://grpc.signp.cn:6002/v3/stats", {
+          codes: this.$store.state.deviceDetails.equipment_code,
+          token: _this.$store.state.token
         })
+        // .get(this.apiHost + "/equipment/queue", {
+        //   params: { code: this.$store.state.deviceDetails.equipment_code }
+        // })
         .then(function(resp) {
-          if (resp.body) {
-            if (resp.body.consumers > 0) {
+          if (resp.body && resp.body.result && resp.body.result.length > 0) {
+            if (resp.body.result[0].connected === 1) {
               _this.status.text = "在线";
               _this.status.class = "green--text";
             } else {

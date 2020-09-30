@@ -204,23 +204,30 @@ export default {
             resolve();
           } else {
             _this.$http
-              .get(_this.apiHost + "/equipment/list", {
+              .get("http://grpc.signp.cn:6002/v3/list", {
+                // .get("http://192.168.1.232:5024/v3/list", {
                 params: {
-                  projectID: _this.$store.state.projectID,
-                  timestamp: parseInt(new Date().getTime() / 1000)
-                },
-                headers: {
-                  "x-refresh": "1"
+                  project_id: _this.$store.state.projectID,
+                  token: _this.$store.state.token
                 }
               })
+              // .get(_this.apiHost + "/equipment/list", {
+              //   params: {
+              //     projectID: _this.$store.state.projectID,
+              //     timestamp: parseInt(new Date().getTime() / 1000)
+              //   },
+              //   headers: {
+              //     "x-refresh": "1"
+              //   }
+              // })
               .then(function(resp) {
-                if (resp.status === 200) {
+                if (resp.body.result && resp.body.result.length > 0) {
                   const writeStore = _this.$store.state.db
                     .transaction("equipmentList", "readwrite")
                     .objectStore("equipmentList");
 
-                  for (let i = 0; i < resp.body.length; i++) {
-                    writeStore.put(resp.body[i]);
+                  for (let i = 0; i < resp.body.result.length; i++) {
+                    writeStore.put(resp.body.result[i]);
                   }
                   _this.finished++;
                   resolve();

@@ -148,24 +148,28 @@ export default {
         return;
       }
 
-      let code = this.selected.join(",");
       // if (this.selected.length === this.list.length) {
       //   code = "all";
       // }
       options.project_id = "" + this.$store.state.projectID;
-      options.code = code;
+      options.codes = this.selected.join(",");
       if (typeof options.args !== "object") {
         options.args = {};
       }
       if (options.args.duration) {
         options.args.duration = options.args.duration * 1000;
       }
+      options.token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2RlIjoiNmFzOSIsImV4cCI6IjIwMjAtMDktMjNUMDU6NTE6MzcuOTU5MTQ0MDA0KzA4OjAwIn0.G4rfeZfENuNnUsUEelptjvqkfzDnf2ERCDfUrgm4Ff0";
+      options.payload = JSON.stringify(options.args);
       const _this = this;
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
+
       this.$http
-        .post(this.apiHost + "/opt", options)
+        // .post(this.apiHost + "/opt", options)
+        .post("http://192.168.1.232:5024/v3/push", options)
         .then(function() {
           _this.opt.title = "消息发送成功";
         })
