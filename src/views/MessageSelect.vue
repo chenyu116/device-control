@@ -159,9 +159,12 @@ export default {
       if (options.args.duration) {
         options.args.duration = options.args.duration * 1000;
       }
-      options.token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2RlIjoiNmFzOSIsImV4cCI6IjIwMjAtMDktMjNUMDU6NTE6MzcuOTU5MTQ0MDA0KzA4OjAwIn0.G4rfeZfENuNnUsUEelptjvqkfzDnf2ERCDfUrgm4Ff0";
-      options.payload = JSON.stringify(options.args);
+      options.token = this.$store.state.token;
+      options.payload = JSON.stringify({
+        opt: options.opt,
+        args: options.args
+      });
+
       const _this = this;
       this.loading.full = true;
       this.opt.title = "处理中";
@@ -169,7 +172,7 @@ export default {
 
       this.$http
         // .post(this.apiHost + "/opt", options)
-        .post("http://192.168.1.232:5024/v3/push", options)
+        .post(this.grpcHost + "/push", options)
         .then(function() {
           _this.opt.title = "消息发送成功";
         })
@@ -196,11 +199,19 @@ export default {
         const r = e.target.result;
         if (r) {
           for (let i = 0; i < r.length; i++) {
-            const _type = _this.eTypes[r[i].equipment_type] || "";
+            // const _type = _this.eTypes[r[i].equipment_type] || "";
             const item = {
-              text: r[i].name + "[" + _type + "] " + r[i].equipment_code,
+              text:
+                "[" +
+                (r[i].equipment_remark || " --- ") +
+                "] " +
+                r[i].equipment_code,
               value: r[i].equipment_code
             };
+            // const item = {
+            //   text: r[i].name + "[" + _type + "] " + r[i].equipment_code,
+            //   value: r[i].equipment_code
+            // };
             _this.list.push(item);
             _this.selected.push(r[i].equipment_code);
           }

@@ -125,10 +125,7 @@ export default {
 
       const code = this.$store.state.deviceDetails.equipment_code;
       options.project_id = this.$store.state.deviceDetails.equipment_project_id;
-      options.codes = code + ",test,test1";
-      for (let i = 0; i < 100; i++) {
-        options.codes += ",t-" + i;
-      }
+      options.codes = code;
       if (typeof options.args !== "object") {
         options.args = {};
       }
@@ -146,8 +143,8 @@ export default {
       this.opt.finished = false;
       this.$http
         // .post(this.apiHost + "/opt", options)
-        // .post("http://grpc.signp.cn:6002/v3/push", options)
-        .post("http://192.168.1.232:5024/v3/push", options)
+        .post(this.grpcHost + "/push", options)
+        // .post("http://192.168.1.232:5024/v3/push", options)
         .then(function() {
           _this.opt.title = "消息发送成功";
         })

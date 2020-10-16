@@ -146,7 +146,7 @@ export default {
       this.opt.finished = false;
       this.$http
         // .post(this.apiHost + "/opt", options)
-        .post("http://grpc.signp.cn:6002/v3/push", options)
+        .post(this.grpcHost + "/push", options)
         // .post("http://192.168.1.232:5024/v3/push", options)
         .then(
           function() {
@@ -246,9 +246,12 @@ export default {
       const _this = this;
       this.loading.getStatus = true;
       this.$http
-        .post("http://grpc.signp.cn:6002/v3/stats", {
-          codes: this.$store.state.deviceDetails.equipment_code,
-          token: _this.$store.state.token
+        .get(this.grpcHost + "/connected", {
+          params: {
+            // .post("http://grpc.signp.cn:6002/v3/stats", {
+            codes: this.$store.state.deviceDetails.equipment_code,
+            token: _this.$store.state.token
+          }
         })
         // .get(this.apiHost + "/equipment/queue", {
         //   params: { code: this.$store.state.deviceDetails.equipment_code }

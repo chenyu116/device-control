@@ -21,8 +21,7 @@ export default new Vuex.Store({
     allowCategoryLevel: window.allowCategoryLevel,
     allowCategoryType: window.allowCategoryType,
     excludeMaps: window.excludeMaps,
-    token:
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2RlIjoiNmFzOSIsImV4cCI6IjIwMjAtMDktMjNUMDU6NTE6MzcuOTU5MTQ0MDA0KzA4OjAwIn0.G4rfeZfENuNnUsUEelptjvqkfzDnf2ERCDfUrgm4Ff0"
+    token: window.token
   },
   mutations: {
     updateDbVersion(state, value) {

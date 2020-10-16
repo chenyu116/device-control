@@ -247,7 +247,7 @@ export default {
         return _this.initPolygons();
       })
       .then(function() {
-        console.log("_this.polygons", _this.polygons);
+        // console.log("_this.polygons", _this.polygons);
       });
 
     document.body.onselectstart = function() {
@@ -256,13 +256,13 @@ export default {
   },
   watch: {
     selectMapID(val) {
-      console.log("watch selectMapID", val);
+      // console.log("watch selectMapID", val);
       if (!val[this.currentFace]) return;
       this.loadPointsData();
     },
     distributorId: {
       handler(val) {
-        console.log("watch distributorId", val);
+        // console.log("watch distributorId", val);
         if (!val[this.currentFace]) return;
         // for (let m = 0; m < this.points[this.currentFace].length; m++) {
         //   this.points[this.currentFace][m].val = [];
@@ -277,12 +277,18 @@ export default {
         //     }
         //   }
         // }
+        const dis = [];
+        for (let i = 0; i < val.length; i++) {
+          dis[i] = [];
+          for (let x = 0; x < val[i].length; x++) {
+            dis[i].push(val[i][x].map_gid);
+          }
+          dis[i] = dis[i].join(",");
+        }
         const newDistributorId = [];
         for (let i = 0; i < val[this.currentFace].length; i++) {
           newDistributorId.push(val[this.currentFace][i].map_gid);
         }
-        const dis = Object.assign([], val);
-
         dis[this.currentFace] = newDistributorId.join(",");
         this.form.distributor_id = JSON.stringify(dis);
         localStorage.setItem(
@@ -363,15 +369,19 @@ export default {
         this.items[i] = [];
       }
 
-      console.log(
-        "this.distributorId",
-        this.$store.state.deviceDetails.distributor_id
-      );
-      console.log("this.initDistributorId", this.initDistributorId);
-      this.form.theme =
-        this.$store.state.themes.length > 0
-          ? this.$store.state.themes[0].value
-          : "";
+      // console.log(
+      //   "this.distributorId",
+      //   this.$store.state.deviceDetails.distributor_id
+      // );
+      // console.log("this.initDistributorId", this.initDistributorId);
+      try {
+        this.form.theme =
+          this.$store.state.themes.length > 0
+            ? this.$store.state.themes[0].value
+            : "theme1";
+      } catch (e) {
+        this.form.theme = "theme1";
+      }
       // try {
       //   const setting = JSON.parse(this.$store.state.deviceDetails.setting);
       //   console.log("setting", setting);
@@ -395,7 +405,7 @@ export default {
     },
     initMapData() {
       const _this = this;
-      console.log(this.$store.state.deviceDetails);
+      // console.log(this.$store.state.deviceDetails);
       return new Promise(function(resolve, reject) {
         const readStore = _this.$store.state.db
           .transaction("mapList")
@@ -456,7 +466,6 @@ export default {
       this.polygons = {};
       return Promise.map(this.mapList, function(map) {
         const mapId = "" + map.map_id;
-        console.log("initPolygons mapId", mapId);
         return new Promise(function(resolve) {
           const readStore = _this.$store.state.db
             .transaction("mapPolygons")
@@ -529,6 +538,7 @@ export default {
     callbackUpdateEquipment(options) {
       const d = Object.assign({}, this.$store.state.deviceDetails);
       d.distributor_id = options.args.distributor_id;
+      d.equipment_rotate = options.args.rotate;
       const writeStore = this.$store.state.db
         .transaction("equipmentList", "readwrite")
         .objectStore("equipmentList");
@@ -557,24 +567,24 @@ export default {
       this.opt.finished = false;
       this.$http
         // .post(this.apiHost + "/opt", options)
-        .post("http://grpc.signp.cn:6002/v3/push", options)
+        .post(this.grpcHost + "/push", options)
         // .post("http://192.168.1.232:5024/v3/push", options)
         .then(function(res) {
-          console.log(res);
+          // console.log(res);
           _this.opt.title = "配置发送成功";
           if (typeof callback === "function") {
             callback(options);
           }
         })
         .catch(function(err) {
-          console.log(err);
+          // console.log(err);
           if (!err.body) {
             err.body = "操作失败，请重试";
           }
           _this.opt.title = err.body;
-          if (err.status !== 500 && typeof callback === "function") {
-            callback(options);
-          }
+          // if (err.status !== 500 && typeof callback === "function") {
+          //   callback(options);
+          // }
         })
         .finally(function() {
           _this.opt.finished = true;
@@ -639,7 +649,7 @@ export default {
       const distributor_id = this.distributorId[this.currentFace];
       const polygons = this.polygons[this.currentFace];
       this.previewPoints = [];
-      console.log("distributor_id", distributor_id);
+      // console.log("distributor_id", distributor_id);
 
       for (let m = 0; m < this.mapList.length; m++) {
         if (!this.previewPoints[m]) {
@@ -658,7 +668,7 @@ export default {
           }
         }
       }
-      console.log(this.previewPoints);
+      // console.log(this.previewPoints);
       // this.previewPoints = this.points[this.currentFace];
 
       this.viewSetting = true;

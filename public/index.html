@@ -11,7 +11,7 @@
     <title>设备管理 - 橙视光标</title>
     <script>
       window.dbVersion = 13;
-      window.projectID = 135;
+      window.projectID = {{.ProjectId}};
       window.debug = true;
       window.allowCategoryLevel = ["0","1","2"];
       window.allowCategoryType = ["category","public"];
@@ -26,6 +26,8 @@
           value: "theme_2",
         },
       ];
+      window.token = "{{.Token}}";
+      window.version = "{{.Version}}";
     </script>
   </head>
   <body>

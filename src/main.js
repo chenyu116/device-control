@@ -37,8 +37,11 @@ if (window.debug === true) {
 Vue.use(Confirm);
 Vue.use(Toast);
 const apiHost = "https://api.signp.cn/v2";
+const grpcHost = "http://test-api-equ.signp.cn/v3";
 Vue.apiHost = apiHost;
 Vue.prototype.apiHost = apiHost;
+Vue.grpcHost = grpcHost;
+Vue.prototype.grpcHost = grpcHost;
 new Vue({
   router,
   store,

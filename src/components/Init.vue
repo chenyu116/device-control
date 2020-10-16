@@ -204,7 +204,7 @@ export default {
             resolve();
           } else {
             _this.$http
-              .get("http://grpc.signp.cn:6002/v3/list", {
+              .get(_this.grpcHost + "/list", {
                 // .get("http://192.168.1.232:5024/v3/list", {
                 params: {
                   project_id: _this.$store.state.projectID,

@@ -157,18 +157,19 @@ export default {
       if (typeof options.args !== "object") {
         options.args = {};
       }
-      if (options.args.duration) {
-        options.args.duration = options.args.duration * 1000;
-      }
       options.codes = this.list.join(",");
-      options.payload = JSON.stringify(options.args);
-      console.log(options);
-      return;
+      // options.codes = "ML5RRI6AS9";
+      options.payload = JSON.stringify({
+        opt: options.opt,
+        args: options.args
+      });
+      options.token = this.$store.state.token;
 
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
       this.$http
+        .post(this.grpcHost + "/push", options)
         // .post(this.apiHost + "/opt", options)
         .then(function() {
           _this.opt.title = "命令已发送";
@@ -181,9 +182,9 @@ export default {
             err.body = "操作失败，请重试";
           }
           _this.opt.title = err.body;
-          if (err.status !== 500 && typeof callback === "function") {
-            callback(options);
-          }
+          // if (err.status !== 500 && typeof callback === "function") {
+          //   callback(options);
+          // }
         })
         .finally(function() {
           _this.opt.finished = true;
