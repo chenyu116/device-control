@@ -569,22 +569,17 @@ export default {
         // .post(this.apiHost + "/opt", options)
         .post(this.grpcHost + "/push", options)
         // .post("http://192.168.1.232:5024/v3/push", options)
-        .then(function(res) {
-          // console.log(res);
+        .then(function() {
           _this.opt.title = "配置发送成功";
           if (typeof callback === "function") {
             callback(options);
           }
         })
         .catch(function(err) {
-          // console.log(err);
           if (!err.body) {
             err.body = "操作失败，请重试";
           }
           _this.opt.title = err.body;
-          // if (err.status !== 500 && typeof callback === "function") {
-          //   callback(options);
-          // }
         })
         .finally(function() {
           _this.opt.finished = true;
