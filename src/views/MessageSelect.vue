@@ -203,17 +203,17 @@ export default {
             const item = {
               text:
                 "[" +
-                (r[i].equipment_remark || " --- ") +
+                (r[i].equipmentRemark || " --- ") +
                 "] " +
-                r[i].equipment_code,
-              value: r[i].equipment_code
+                r[i].equipmentCode,
+              value: r[i].equipmentCode
             };
             // const item = {
-            //   text: r[i].name + "[" + _type + "] " + r[i].equipment_code,
-            //   value: r[i].equipment_code
+            //   text: r[i].name + "[" + _type + "] " + r[i].equipmentCode,
+            //   value: r[i].equipmentCode
             // };
             _this.list.push(item);
-            _this.selected.push(r[i].equipment_code);
+            _this.selected.push(r[i].equipmentCode);
           }
         } else {
           _this.errMsg = "读取设备列表失败";

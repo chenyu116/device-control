@@ -12,19 +12,19 @@
             >
           </p>
           <p class="black--text full-width">
-            地图编号：{{ $store.state.deviceDetails.equipment_map_id }}
+            地图编号：{{ $store.state.deviceDetails.equipmentMapId }}
           </p>
           <p class="black--text full-width">
-            类型：{{ types[$store.state.deviceDetails.equipment_type] }}
+            类型：{{ types[$store.state.deviceDetails.equipmentType] }}
           </p>
           <p class="black--text full-width">
-            点位编号：{{ $store.state.deviceDetails.equipment_point_id }}
+            点位编号：{{ $store.state.deviceDetails.equipmentPointId }}
           </p>
           <p class="black--text full-width">
-            旋转角度：{{ $store.state.deviceDetails.equipment_rotate }}
+            旋转角度：{{ $store.state.deviceDetails.equipmentRotate }}
           </p>
           <p class="black--text full-width">
-            版本：{{ $store.state.deviceDetails.equipment_version }}
+            版本：{{ $store.state.deviceDetails.equipmentVersion }}
           </p>
         </v-card-text>
         <v-btn
@@ -127,8 +127,8 @@ export default {
       if (!options.opt) {
         return;
       }
-      const code = this.$store.state.deviceDetails.equipment_code;
-      options.project_id = this.$store.state.deviceDetails.equipment_project_id;
+      const code = this.$store.state.deviceDetails.equipmentCode;
+      options.project_id = this.$store.state.deviceDetails.equipmentProjectId;
       options.codes = code;
       if (options.confirm === true) {
         options.messageId = code + "-" + new Date().getTime();
@@ -249,12 +249,12 @@ export default {
         .get(this.grpcHost + "/connected", {
           params: {
             // .post("http://grpc.signp.cn:6002/v3/stats", {
-            codes: this.$store.state.deviceDetails.equipment_code,
+            codes: this.$store.state.deviceDetails.equipmentCode,
             token: _this.$store.state.token
           }
         })
         // .get(this.apiHost + "/equipment/queue", {
-        //   params: { code: this.$store.state.deviceDetails.equipment_code }
+        //   params: { code: this.$store.state.deviceDetails.equipmentCode }
         // })
         .then(function(resp) {
           if (resp.body && resp.body.result && resp.body.result.length > 0) {

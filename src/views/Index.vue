@@ -114,10 +114,10 @@ export default {
             const item = {
               text:
                 "[" +
-                (r[i].equipment_remark || " --- ") +
+                (r[i].equipmentRemark || " --- ") +
                 "] " +
-                r[i].equipment_code,
-              value: r[i].equipment_code
+                r[i].equipmentCode,
+              value: r[i].equipmentCode
             };
             list.push(item);
           }

@@ -133,7 +133,7 @@ export default {
             _db.createObjectStore("mapGroup", { keyPath: "map_id" });
             _db.createObjectStore("project", { keyPath: "project_id" });
             _db.createObjectStore("equipmentList", {
-              keyPath: "equipment_code"
+              keyPath: "equipmentCode"
             });
           };
           openRequest.onsuccess = function(e) {

@@ -123,8 +123,8 @@ export default {
         return;
       }
 
-      const code = this.$store.state.deviceDetails.equipment_code;
-      options.project_id = this.$store.state.deviceDetails.equipment_project_id;
+      const code = this.$store.state.deviceDetails.equipmentCode;
+      options.project_id = this.$store.state.deviceDetails.equipmentProjectId;
       options.codes = code;
       if (typeof options.args !== "object") {
         options.args = {};

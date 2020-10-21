@@ -293,7 +293,7 @@ export default {
         this.form.distributor_id = JSON.stringify(dis);
         localStorage.setItem(
           "deviceControl:setting-" +
-            this.$store.state.deviceDetails.equipment_code,
+            this.$store.state.deviceDetails.equipmentCode,
           JSON.stringify(this.form)
         );
       }
@@ -335,7 +335,7 @@ export default {
         this.form.distributor_id = JSON.stringify(newDistributorId);
         localStorage.setItem(
           "deviceControl:setting-" +
-            this.$store.state.deviceDetails.equipment_code,
+            this.$store.state.deviceDetails.equipmentCode,
           JSON.stringify(this.form)
         );
       }
@@ -343,11 +343,11 @@ export default {
     initData() {
       try {
         this.initDistributorId = JSON.parse(
-          this.$store.state.deviceDetails.distributor_id
+          this.$store.state.deviceDetails.distributorId
         );
       } catch (e) {
         this.initDistributorId = [
-          this.$store.state.deviceDetails.distributor_id
+          this.$store.state.deviceDetails.distributorId
         ];
       }
 
@@ -359,7 +359,7 @@ export default {
       }
 
       this.form.rotate = parseInt(
-        this.$store.state.deviceDetails.equipment_rotate
+        this.$store.state.deviceDetails.equipmentRotate
       );
 
       for (let i = 0; i < this.faces; i++) {
@@ -371,7 +371,7 @@ export default {
 
       // console.log(
       //   "this.distributorId",
-      //   this.$store.state.deviceDetails.distributor_id
+      //   this.$store.state.deviceDetails.distributorId
       // );
       // console.log("this.initDistributorId", this.initDistributorId);
       try {
@@ -399,7 +399,7 @@ export default {
       const value = JSON.stringify(this.form);
       localStorage.setItem(
         "deviceControl:setting-" +
-          this.$store.state.deviceDetails.equipment_code,
+          this.$store.state.deviceDetails.equipmentCode,
         value
       );
     },
@@ -410,7 +410,7 @@ export default {
         const readStore = _this.$store.state.db
           .transaction("mapList")
           .objectStore("mapList")
-          .get(_this.$store.state.deviceDetails.equipment_map_id + "");
+          .get(_this.$store.state.deviceDetails.equipmentMapId + "");
         readStore.onsuccess = function(e) {
           const r = e.target.result;
           if (r) {
@@ -537,8 +537,8 @@ export default {
     },
     callbackUpdateEquipment(options) {
       const d = Object.assign({}, this.$store.state.deviceDetails);
-      d.distributor_id = options.args.distributor_id;
-      d.equipment_rotate = options.args.rotate;
+      d.distributorId = options.args.distributor_id;
+      d.equipmentRotate = options.args.rotate;
       const writeStore = this.$store.state.db
         .transaction("equipmentList", "readwrite")
         .objectStore("equipmentList");
@@ -549,9 +549,9 @@ export default {
       if (!options.opt) {
         return;
       }
-      const code = this.$store.state.deviceDetails.equipment_code;
+      const code = this.$store.state.deviceDetails.equipmentCode;
       // const code = "sp.server.queue.34e0dddf233916440a98a7b56aa44e67";
-      options.project_id = this.$store.state.deviceDetails.equipment_project_id;
+      options.project_id = this.$store.state.deviceDetails.equipmentProjectId;
       options.codes = code;
       if (typeof options.args !== "object") {
         options.args = {};
@@ -605,7 +605,7 @@ export default {
       let args = JSON.parse(
         localStorage.getItem(
           "deviceControl:setting-" +
-            this.$store.state.deviceDetails.equipment_code
+            this.$store.state.deviceDetails.equipmentCode
         )
       );
       if (!args) {
@@ -615,7 +615,7 @@ export default {
       args.show_map = this.form.show_map ? 1 : 0;
       try {
         const dis = JSON.parse(args.distributor_id);
-        if (this.$store.state.deviceDetails.equipment_type != "led") {
+        if (this.$store.state.deviceDetails.equipmentType != "led") {
           args.distributor_id = dis[0];
         }
       } catch (e) {

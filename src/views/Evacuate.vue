@@ -53,7 +53,7 @@
 export default {
   components: {},
   mounted() {
-    this.loadDeviceList();
+    // this.loadDeviceList();
   },
   data() {
     return {
@@ -96,10 +96,13 @@ export default {
         case "quitExit":
           p.project_emergency_evacuation = "0";
           break;
-        default:
-          return;
       }
       this.$store.commit("updateProject", p);
+      const writeStore = this.$store.state.db
+        .transaction("project", "readwrite")
+        .objectStore("project");
+      p.project_id = p.project_id + "";
+      writeStore.put(p);
       this.content = { zh_CN: "", en_US: "" };
     },
     /**
@@ -144,20 +147,20 @@ export default {
         return;
       }
       const _this = this;
-      if (this.list.length === 0) {
-        this.loading.full = true;
-        this.opt.title = "设备列表读取失败！";
-        setTimeout(function() {
-          _this.loading.full = false;
-        }, 2000);
-        return;
-      }
+      // if (this.list.length === 0) {
+      //   this.loading.full = true;
+      //   this.opt.title = "设备列表读取失败！";
+      //   setTimeout(function() {
+      //     _this.loading.full = false;
+      //   }, 2000);
+      //   return;
+      // }
       options.confirm = false;
       options.project_id = this.$store.state.project.project_id;
       if (typeof options.args !== "object") {
         options.args = {};
       }
-      options.codes = this.list.join(",");
+      options.codes = "ALL";
       // options.codes = "ML5RRI6AS9";
       options.payload = JSON.stringify({
         opt: options.opt,
@@ -208,7 +211,7 @@ export default {
             //   text: r[i].name + "[" + _type + "] " + r[i].equipment_code,
             //   value: r[i].equipment_code
             // };
-            _this.list.push(r[i].equipment_code);
+            _this.list.push(r[i].equipmentCode);
           }
         }
       };
