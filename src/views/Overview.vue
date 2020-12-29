@@ -98,6 +98,11 @@ export default {
           title: "进入设置",
           icon: "fa-redo-alt",
           callback: this.enterSetting
+        },
+        {
+          title: "显示配置信息",
+          icon: "fa-address-card",
+          callback: this.enterSetting
         }
       ],
       types: {
@@ -128,7 +133,7 @@ export default {
         return;
       }
       const code = this.$store.state.deviceDetails.equipmentCode;
-      options.project_id = this.$store.state.deviceDetails.equipmentProjectId;
+      options.projects = this.$store.state.deviceDetails.equipmentProjectId;
       options.codes = code;
       if (options.confirm === true) {
         options.messageId = code + "-" + new Date().getTime();
@@ -248,18 +253,15 @@ export default {
       this.$http
         .get(this.grpcHost + "/connected", {
           params: {
-            // .post("http://grpc.signp.cn:6002/v3/stats", {
+            projects: this.$store.state.deviceDetails.equipmentProjectId,
             codes: this.$store.state.deviceDetails.equipmentCode,
             token: _this.$store.state.token
           }
         })
-        // .get(this.apiHost + "/equipment/queue", {
-        //   params: { code: this.$store.state.deviceDetails.equipmentCode }
-        // })
         .then(function(resp) {
           if (resp.body && resp.body.result && resp.body.result.length > 0) {
             if (resp.body.result[0].connected === 1) {
-              _this.status.text = "在线";
+              _this.status.text = resp.body.result[0].type + " 在线";
               _this.status.class = "green--text";
             } else {
               _this.status.text = "离线";
