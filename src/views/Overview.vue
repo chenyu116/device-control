@@ -15,7 +15,7 @@
             地图编号：{{ $store.state.deviceDetails.equipmentMapId }}
           </p>
           <p class="black--text full-width">
-            类型：{{ types[$store.state.deviceDetails.equipmentType] }}
+            类型：{{ $store.state.deviceDetails.equipmentType }}
           </p>
           <p class="black--text full-width">
             点位编号：{{ $store.state.deviceDetails.equipmentPointId }}
@@ -96,13 +96,13 @@ export default {
         },
         {
           title: "进入设置",
-          icon: "fa-redo-alt",
+          icon: "fa-cog",
           callback: this.enterSetting
         },
         {
           title: "显示配置信息",
           icon: "fa-address-card",
-          callback: this.enterSetting
+          callback: this.showInfo
         }
       ],
       types: {
@@ -133,6 +133,7 @@ export default {
         return;
       }
       const code = this.$store.state.deviceDetails.equipmentCode;
+      options.project_id = this.$store.state.deviceDetails.equipmentProjectId;
       options.projects = this.$store.state.deviceDetails.equipmentProjectId;
       options.codes = code;
       if (options.confirm === true) {
@@ -144,6 +145,7 @@ export default {
       options.payload = JSON.stringify({
         opt: options.opt
       });
+      options.expiration = "10000";
       options.token = this.$store.state.token;
       const _this = this;
       this.loading.full = true;
@@ -187,7 +189,7 @@ export default {
      */
     reboot() {
       console.log("reboot");
-      const options = Object.assign({}, this.options);
+      const options = JSON.parse(JSON.stringify(this.options));
       options.opt = "reboot";
       this.sendOpt(options);
     },
@@ -201,7 +203,7 @@ export default {
      */
     refreshDB() {
       console.log("refreshDB");
-      const options = Object.assign({}, this.options);
+      const options = JSON.parse(JSON.stringify(this.options));
       options.opt = "refreshDB";
       this.sendOpt(options);
     },
@@ -215,7 +217,7 @@ export default {
      */
     refreshSW() {
       console.log("refreshSW");
-      const options = Object.assign({}, this.options);
+      const options = JSON.parse(JSON.stringify(this.options));
       options.opt = "refreshSW";
       this.sendOpt(options);
     },
@@ -229,7 +231,7 @@ export default {
      */
     restartApp() {
       console.log("restartApp");
-      const options = Object.assign({}, this.options);
+      const options = JSON.parse(JSON.stringify(this.options));
       options.opt = "restartApp";
       this.sendOpt(options);
     },
@@ -243,8 +245,22 @@ export default {
      */
     enterSetting() {
       console.log("enterSetting");
-      const options = Object.assign({}, this.options);
+      const options = JSON.parse(JSON.stringify(this.options));
       options.opt = "enterSetting";
+      this.sendOpt(options);
+    },
+    /**
+     * @api {rabbitmq message} showInfo 显示设备信息
+     * @apiVersion 0.1.0
+     * @apiUse commonProperties
+     * @apiGroup Command
+     * @apiSuccessExample {json} 命令内容示例:
+     * {"opt":"showInfo","args":{}}
+     */
+    showInfo() {
+      console.log("showInfo");
+      const options = JSON.parse(JSON.stringify(this.options));
+      options.opt = "showInfo";
       this.sendOpt(options);
     },
     getStatus() {
@@ -252,16 +268,17 @@ export default {
       this.loading.getStatus = true;
       this.$http
         .get(this.grpcHost + "/connected", {
+          // .get("http://192.168.1.232:5024/v3/connected", {
           params: {
             projects: this.$store.state.deviceDetails.equipmentProjectId,
             codes: this.$store.state.deviceDetails.equipmentCode,
-            token: _this.$store.state.token
+            token: this.$store.state.token
           }
         })
         .then(function(resp) {
           if (resp.body && resp.body.result && resp.body.result.length > 0) {
             if (resp.body.result[0].connected === 1) {
-              _this.status.text = resp.body.result[0].type + " 在线";
+              _this.status.text = resp.body.result[0].type;
               _this.status.class = "green--text";
             } else {
               _this.status.text = "离线";

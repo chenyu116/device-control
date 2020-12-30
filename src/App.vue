@@ -23,6 +23,11 @@
           </v-btn>
         </template>
         <v-list dense="">
+          <v-list-item>
+            <v-list-item-content>
+              {{ $store.state.version }}
+            </v-list-item-content>
+          </v-list-item>
           <v-list-item
             @click="goPage('/overview')"
             v-if="$store.state.deviceDetails"
@@ -89,7 +94,6 @@
             </v-list-item-content>
           </v-list-item>
           <v-divider v-if="$store.state.deviceDetails"></v-divider>
-
           <v-list-item
             @click="
               $confirm({ title: '确定清除手机数据', callback: clearData })
@@ -106,9 +110,9 @@
       </v-menu>
     </v-app-bar>
 
-    <v-content v-if="dataLoaded">
+    <v-main v-if="dataLoaded">
       <router-view />
-    </v-content>
+    </v-main>
   </v-app>
 </template>
 

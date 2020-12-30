@@ -52,7 +52,7 @@ export default {
       const initFunc = [
         this.initIndexedDB,
         this.initProject,
-        this.initDeviceList,
+        this.initEquipmentList,
         this.initMapPolygon,
         this.initMapList
       ];
@@ -128,10 +128,10 @@ export default {
           );
           openRequest.onupgradeneeded = function(e) {
             const _db = e.target.result;
-            _db.createObjectStore("mapPolygons", { keyPath: "map_id" });
-            _db.createObjectStore("mapList", { keyPath: "map_id" });
-            _db.createObjectStore("mapGroup", { keyPath: "map_id" });
-            _db.createObjectStore("project", { keyPath: "project_id" });
+            _db.createObjectStore("mapPolygons", { keyPath: "mapId" });
+            _db.createObjectStore("mapList", { keyPath: "mapId" });
+            _db.createObjectStore("mapGroup", { keyPath: "mapId" });
+            _db.createObjectStore("project", { keyPath: "projectId" });
             _db.createObjectStore("equipmentList", {
               keyPath: "equipmentCode"
             });
@@ -151,6 +151,15 @@ export default {
     },
     initProject() {
       const _this = this;
+      // return this.$store
+      //   .dispatch("getProject")
+      //   .then(function() {
+      //     _this.finished++;
+      //     return Promise.resolve();
+      //   })
+      //   .catch(function() {
+      //     return Promise.reject(_this.genErr("读取项目详情失败"));
+      //   });
       return new Promise(function(resolve, reject) {
         const readStore = _this.$store.state.db
           .transaction("project")
@@ -164,10 +173,10 @@ export default {
             resolve();
           } else {
             _this.$http
-              .get(_this.apiHost + "/project", {
+              .get(_this.detachHost + "/project", {
                 params: {
                   project_id: _this.$store.state.projectID,
-                  timestamp: parseInt(new Date().getTime() / 1000)
+                  token: _this.$store.state.token
                 }
               })
               .then(function(resp) {
@@ -190,7 +199,7 @@ export default {
         };
       });
     },
-    initDeviceList() {
+    initEquipmentList() {
       const _this = this;
       return new Promise(function(resolve, reject) {
         const readStore = _this.$store.state.db
@@ -243,14 +252,14 @@ export default {
       });
     },
     polygonFilter(item) {
-      if (this.$store.state.excludeMaps.indexOf(item.map_id) > -1) {
-        return true;
+      if (this.$store.state.excludeMaps.indexOf(item.mapId) > -1) {
+        return false;
       }
       if (this.$store.state.allowCategoryType.length > 0) {
         if (
           this.$store.state.allowCategoryType.indexOf(
-            item.map_polygon_category_type
-          ) == -1
+            item.mapPolygonCategoryType
+          ) === -1
         ) {
           return false;
         }
@@ -258,8 +267,8 @@ export default {
       if (this.$store.state.allowCategoryLevel.length > 0) {
         if (
           this.$store.state.allowCategoryLevel.indexOf(
-            item.map_polygon_category_level
-          ) == -1
+            item.mapPolygonCategoryLevel
+          ) === -1
         ) {
           return false;
         }
@@ -280,10 +289,10 @@ export default {
             resolve();
           } else {
             _this.$http
-              .get(_this.apiHost + "/polygons", {
+              .get(_this.detachHost + "/map-polygon-list", {
                 params: {
-                  projectID: _this.$store.state.projectID,
-                  timestamp: parseInt(new Date().getTime() / 1000)
+                  project_id: _this.$store.state.projectID,
+                  token: _this.$store.state.token
                 }
               })
               .then(function(resp) {
@@ -292,19 +301,17 @@ export default {
                     .transaction("mapPolygons", "readwrite")
                     .objectStore("mapPolygons");
                   const mapPolygons = {};
-                  for (let i = 0; i < resp.body.length; i++) {
-                    if (
-                      resp.body[i].map_id &&
-                      _this.polygonFilter(resp.body[i])
-                    ) {
-                      if (!mapPolygons[resp.body[i].map_id]) {
-                        mapPolygons[resp.body[i].map_id] = [];
+                  const data = resp.body.result;
+                  for (let i = 0; i < data.length; i++) {
+                    if (data[i].mapId && _this.polygonFilter(data[i])) {
+                      if (!mapPolygons[data[i].mapId]) {
+                        mapPolygons[data[i].mapId] = [];
                       }
-                      mapPolygons[resp.body[i].map_id].push(resp.body[i]);
+                      mapPolygons[data[i].mapId].push(data[i]);
                     }
                   }
                   for (let i in mapPolygons) {
-                    writeStore.put({ map_id: i, val: mapPolygons[i] });
+                    writeStore.put({ mapId: parseInt(i), val: mapPolygons[i] });
                   }
                   _this.finished++;
                   resolve();
@@ -333,10 +340,10 @@ export default {
             resolve();
           } else {
             _this.$http
-              .get(_this.apiHost + "/map/list", {
+              .get(_this.detachHost + "/map-list", {
                 params: {
-                  projectID: _this.$store.state.projectID,
-                  timestamp: parseInt(new Date().getTime() / 1000)
+                  project_id: _this.$store.state.projectID,
+                  token: _this.$store.state.token
                 }
               })
               .then(function(resp) {
@@ -344,19 +351,23 @@ export default {
                   const writeMapList = _this.$store.state.db
                     .transaction("mapList", "readwrite")
                     .objectStore("mapList");
+                  const data = resp.body.result;
                   const mapGroup = {};
-                  for (let i = 0; i < resp.body.length; i++) {
-                    writeMapList.put(resp.body[i]);
-                    if (!mapGroup[resp.body[i].map_pid]) {
-                      mapGroup[resp.body[i].map_pid] = [];
+                  for (let i = 0; i < data.length; i++) {
+                    writeMapList.put(data[i]);
+                    if (!mapGroup[data[i].mapPid]) {
+                      mapGroup[data[i].mapPid] = [];
                     }
-                    mapGroup[resp.body[i].map_pid].push(resp.body[i]);
+                    mapGroup[data[i].mapPid].push(data[i]);
                   }
-                  const writeMapGroupt = _this.$store.state.db
+                  const writeMapGroup = _this.$store.state.db
                     .transaction("mapGroup", "readwrite")
                     .objectStore("mapGroup");
                   for (let mapID in mapGroup) {
-                    writeMapGroupt.put({ map_id: mapID, val: mapGroup[mapID] });
+                    writeMapGroup.put({
+                      mapId: parseInt(mapID),
+                      val: mapGroup[mapID]
+                    });
                   }
                   _this.finished++;
                   resolve();

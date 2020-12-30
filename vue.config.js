@@ -6,7 +6,6 @@ module.exports = {
     process.env.NODE_ENV === "production"
       ? "control/" + process.env.APP_VERSION + "/" + process.env.APP_BUILDTIME
       : "",
-  publicPath:
-    process.env.NODE_ENV === "production" ? "https://o.signp.cn/" : "/",
+  publicPath: process.env.NODE_ENV === "production" ? "/static" : "",
   productionSourceMap: false
 };

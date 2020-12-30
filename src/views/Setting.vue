@@ -246,7 +246,7 @@ export default {
       .then(function() {
         return _this.initPolygons();
       })
-      .then(function() {
+      .catch(function() {
         // console.log("_this.polygons", _this.polygons);
       });
 
@@ -281,13 +281,13 @@ export default {
         for (let i = 0; i < val.length; i++) {
           dis[i] = [];
           for (let x = 0; x < val[i].length; x++) {
-            dis[i].push(val[i][x].map_gid);
+            dis[i].push(val[i][x].mapGid);
           }
           dis[i] = dis[i].join(",");
         }
         const newDistributorId = [];
         for (let i = 0; i < val[this.currentFace].length; i++) {
-          newDistributorId.push(val[this.currentFace][i].map_gid);
+          newDistributorId.push(val[this.currentFace][i].mapGid);
         }
         dis[this.currentFace] = newDistributorId.join(",");
         this.form.distributor_id = JSON.stringify(dis);
@@ -327,7 +327,7 @@ export default {
           } else {
             const temp = [];
             for (let l = 0; l < this.distributorId[i].length; l++) {
-              temp.push(this.distributorId[i][l].map_gid);
+              temp.push(this.distributorId[i][l].mapGid);
             }
             newDistributorId[i] = temp.join(",");
           }
@@ -410,7 +410,7 @@ export default {
         const readStore = _this.$store.state.db
           .transaction("mapList")
           .objectStore("mapList")
-          .get(_this.$store.state.deviceDetails.equipmentMapId + "");
+          .get(_this.$store.state.deviceDetails.equipmentMapId);
         readStore.onsuccess = function(e) {
           const r = e.target.result;
           if (r) {
@@ -430,17 +430,17 @@ export default {
         const readStore = _this.$store.state.db
           .transaction("mapGroup")
           .objectStore("mapGroup")
-          .get(mapDetails.map_pid);
+          .get(mapDetails.mapPid);
         readStore.onsuccess = function(e) {
           const r = e.target.result;
           if (r && r.val) {
             for (let i = 0; i < r.val.length; i++) {
-              _this.maps[r.val[i].map_id] = r.val[i].detailed_name;
+              _this.maps[r.val[i].mapId] = r.val[i].detailedName;
               mapList.push({
-                map_id: r.val[i].map_id,
-                text: r.val[i].detailed_name,
-                value: r.val[i].map_id,
-                sortOrder: r.val[i].map_sort_order
+                mapId: r.val[i].mapId,
+                text: r.val[i].detailedName,
+                value: r.val[i].mapId,
+                sortOrder: r.val[i].mapSortOrder
               });
             }
             mapList.sort(function(a, b) {
@@ -450,8 +450,8 @@ export default {
             for (let l = 0; l < _this.points.length; l++) {
               for (let i = 0; i < mapList.length; i++) {
                 _this.points[l].push({
-                  map_name: mapList[i].text,
-                  map_id: mapList[i].value,
+                  mapName: mapList[i].text,
+                  mapId: mapList[i].value,
                   val: []
                 });
               }
@@ -465,14 +465,15 @@ export default {
       const _this = this;
       this.polygons = {};
       return Promise.map(this.mapList, function(map) {
-        const mapId = "" + map.map_id;
+        const mapId = map.mapId;
         return new Promise(function(resolve) {
           const readStore = _this.$store.state.db
             .transaction("mapPolygons")
             .objectStore("mapPolygons")
-            .get(map.map_id + "");
+            .get(map.mapId);
           readStore.onsuccess = function(e) {
             const r = e.target.result;
+            console.log("initPolygons", mapId, r);
             if (r && r.val && r.val.length > 0) {
               for (let m = 0; m < _this.initDistributorId.length; m++) {
                 if (!_this.polygons[m]) {
@@ -485,10 +486,10 @@ export default {
                 const idSplit = _this.initDistributorId[m].split(",");
                 for (let i = 0; i < idSplit.length; i++) {
                   for (let x = 0; x < r.val.length; x++) {
-                    if (idSplit[i] == r.val[x].map_gid) {
+                    if (idSplit[i] == r.val[x].mapGid) {
                       const item = {
-                        map_id: r.val[x].map_id,
-                        map_gid: r.val[x].map_gid,
+                        mapId: r.val[x].mapId,
+                        mapGid: r.val[x].mapGid,
                         name: r.val[x].name
                       };
                       _this.distributorId[m].push(item);
@@ -498,13 +499,14 @@ export default {
                 }
                 for (let x = 0; x < r.val.length; x++) {
                   const item = {
-                    map_id: r.val[x].map_id,
-                    map_gid: r.val[x].map_gid,
+                    mapId: r.val[x].mapId,
+                    mapGid: r.val[x].mapGid,
                     name: r.val[x].name
                   };
                   _this.polygons[m][mapId].push(item);
                 }
               }
+              console.log(_this.polygons);
             }
             resolve();
           };
@@ -515,14 +517,15 @@ export default {
       this.items[this.currentFace] = [];
       this.loading.points = true;
       const _this = this;
+
       const r = this.polygons[this.currentFace][
         this.selectMapID[this.currentFace] + ""
       ];
       if (r) {
         for (let i = 0; i < r.length; i++) {
           const item = {
-            map_id: r[i].map_id,
-            map_gid: r[i].map_gid,
+            mapId: r[i].mapId,
+            mapGid: r[i].mapGid,
             name: r[i].name
           };
           _this.items[_this.currentFace].push({
@@ -654,9 +657,9 @@ export default {
           };
         }
         for (let i = 0; i < distributor_id.length; i++) {
-          for (let p = 0; p < polygons[this.mapList[m].map_id].length; p++) {
-            const polygon = polygons[this.mapList[m].map_id][p];
-            if (distributor_id[i].map_gid == polygon.map_gid) {
+          for (let p = 0; p < polygons[this.mapList[m].mapId].length; p++) {
+            const polygon = polygons[this.mapList[m].mapId][p];
+            if (distributor_id[i].mapGid == polygon.mapGid) {
               this.previewPoints[m].val.push(polygon);
               break;
             }
