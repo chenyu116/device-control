@@ -1,7 +1,7 @@
 {
   "name": "devicecontrol",
-  "version":"1.0.2",
-  "buildTime":"1609321496",
+  "version":"1.0.4",
+  "buildTime":"1609385234",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",

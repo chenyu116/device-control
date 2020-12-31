@@ -5,20 +5,20 @@
       <v-card flat="">
         <p class="title font-weight-bold">紧急情况</p>
         <v-textarea
-          v-if="$store.state.project.project_emergency_evacuation === '0'"
+          v-if="$store.state.project.projectEmergencyEvacuation === '0'"
           label="中文内容"
           outlined=""
           v-model="content.zh_CN"
         ></v-textarea>
         <v-textarea
-          v-if="$store.state.project.project_emergency_evacuation === '0'"
+          v-if="$store.state.project.projectEmergencyEvacuation === '0'"
           label="英文内容"
           outlined=""
           v-model="content.en_US"
         ></v-textarea>
         <v-card-actions>
           <v-btn
-            v-if="$store.state.project.project_emergency_evacuation === '0'"
+            v-if="$store.state.project.projectEmergencyEvacuation === '0'"
             :ripple="{ class: 'red--text' }"
             class="subtitle-1 mt-5 white--text"
             block=""
@@ -29,9 +29,7 @@
             紧急情况
           </v-btn>
           <v-btn
-            v-else-if="
-              $store.state.project.project_emergency_evacuation === '1'
-            "
+            v-else-if="$store.state.project.projectEmergencyEvacuation === '1'"
             :ripple="{ class: 'red--text' }"
             class="subtitle-1 mt-5 white--text"
             block=""
@@ -88,20 +86,19 @@ export default {
   },
   methods: {
     callbackUpdateProject(options) {
-      const p = Object.assign({}, this.$store.state.project);
+      const p = JSON.parse(JSON.stringify(this.$store.state.project));
       switch (options.opt) {
         case "enterExit":
-          p.project_emergency_evacuation = "1";
+          p.projectEmergencyEvacuation = "1";
           break;
         case "quitExit":
-          p.project_emergency_evacuation = "0";
+          p.projectEmergencyEvacuation = "0";
           break;
       }
       this.$store.commit("updateProject", p);
       const writeStore = this.$store.state.db
         .transaction("project", "readwrite")
         .objectStore("project");
-      p.project_id = p.project_id + "";
       writeStore.put(p);
       this.content = { zh_CN: "", en_US: "" };
     },
@@ -122,7 +119,7 @@ export default {
       this.$confirm({
         title: "确定进入紧急情况",
         callback: function() {
-          const options = Object.assign({}, _this.options);
+          const options = JSON.parse(JSON.stringify(_this.options));
           options.opt = "enterExit";
           options.args = _this.content;
           _this.sendOpt(options, _this.callbackUpdateProject);
@@ -138,7 +135,7 @@ export default {
      * {"opt":"quitExit","args":{}}
      */
     quitExit() {
-      const options = Object.assign({}, this.options);
+      const options = JSON.parse(JSON.stringify(this.options));
       options.opt = "quitExit";
       this.sendOpt(options, this.callbackUpdateProject);
     },
@@ -156,7 +153,7 @@ export default {
       //   return;
       // }
       options.confirm = false;
-      options.project_id = this.$store.state.project.project_id;
+      options.project_id = this.$store.state.project.projectId;
       if (typeof options.args !== "object") {
         options.args = {};
       }
