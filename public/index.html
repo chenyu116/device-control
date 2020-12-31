@@ -10,8 +10,8 @@
     <link rel="icon" href="<%= BASE_URL %>favicon.ico" />
     <title>设备管理 - 橙视光标</title>
     <script>
-      window.dbVersion = 13;
-      window.projectID = 135;
+      window.dbVersion = {{.DbVersion}};
+      window.projectID = {{.ProjectID}};
       window.debug = true;
       window.allowCategoryLevel = ["0","1","2"];
       window.allowCategoryType = ["category","public"];
@@ -26,7 +26,7 @@
           value: "theme_2",
         },
       ];
-      window.token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJjb250cm9sIiwiZXhwIjoxNjA5MzQ1MDc0fQ.oa6OC21uWI63HvmEQA2iVQCjSmicLGjPkGHLpxnq8P8";
+      window.token = "{{.Token}}";
       window.version = "{{.Version}}";
     </script>
   </head>
