@@ -22,6 +22,7 @@
 </template>
 
 <script>
+import openapi from "../libs/openapi";
 export default {
   components: {},
   data: () => ({
@@ -128,12 +129,12 @@ export default {
           );
           openRequest.onupgradeneeded = function(e) {
             const _db = e.target.result;
-            _db.createObjectStore("mapPolygons", { keyPath: "mapId" });
-            _db.createObjectStore("mapList", { keyPath: "mapId" });
-            _db.createObjectStore("mapGroup", { keyPath: "mapId" });
-            _db.createObjectStore("project", { keyPath: "projectId" });
+            _db.createObjectStore("mapPolygons", { keyPath: "map_id" });
+            _db.createObjectStore("mapList", { keyPath: "map_id" });
+            _db.createObjectStore("mapGroup", { keyPath: "map_id" });
+            _db.createObjectStore("project", { keyPath: "project_id" });
             _db.createObjectStore("equipmentList", {
-              keyPath: "equipmentCode"
+              keyPath: "equipment_code"
             });
           };
           openRequest.onsuccess = function(e) {
@@ -164,7 +165,7 @@ export default {
         const readStore = _this.$store.state.db
           .transaction("project")
           .objectStore("project")
-          .get(_this.$store.state.projectID + "");
+          .get(_this.$store.state.projectID);
         readStore.onsuccess = function(e) {
           const r = e.target.result;
           if (r) {
@@ -172,27 +173,24 @@ export default {
             _this.finished++;
             resolve();
           } else {
-            _this.$http
-              .get(_this.detachHost + "/project", {
-                params: {
-                  project_id: _this.$store.state.projectID,
-                  token: _this.$store.state.token
-                }
-              })
+            openapi({
+              url: "/v3/project",
+              params: {
+                project_id: _this.$store.state.projectID
+              }
+            })
               .then(function(resp) {
-                if (resp.status === 200) {
-                  _this.$store.commit("updateProject", resp.body);
-                  const writeStore = _this.$store.state.db
-                    .transaction("project", "readwrite")
-                    .objectStore("project");
-                  writeStore.put(resp.body);
-                  _this.finished++;
-                  resolve();
-                } else {
-                  reject(_this.genErr("读取项目详情失败"));
-                }
+                const data = resp.data.data;
+                _this.$store.commit("updateProject", data);
+                const writeStore = _this.$store.state.db
+                  .transaction("project", "readwrite")
+                  .objectStore("project");
+                writeStore.put(data);
+                _this.finished++;
+                resolve();
               })
-              .catch(function() {
+              .catch(function(err) {
+                console.log(err);
                 reject(_this.genErr("读取项目详情失败"));
               });
           }
@@ -212,37 +210,22 @@ export default {
             _this.finished++;
             resolve();
           } else {
-            _this.$http
-              .get(_this.grpcHost + "/list", {
-                // .get("http://192.168.1.232:5024/v3/list", {
-                params: {
-                  project_id: _this.$store.state.projectID,
-                  token: _this.$store.state.token
-                }
-              })
-              // .get(_this.apiHost + "/equipment/list", {
-              //   params: {
-              //     projectID: _this.$store.state.projectID,
-              //     timestamp: parseInt(new Date().getTime() / 1000)
-              //   },
-              //   headers: {
-              //     "x-refresh": "1"
-              //   }
-              // })
+            openapi({
+              url: "/v3/equipment/list",
+              params: {
+                project_id: _this.$store.state.projectID
+              }
+            })
               .then(function(resp) {
-                if (resp.body.result && resp.body.result.length > 0) {
-                  const writeStore = _this.$store.state.db
-                    .transaction("equipmentList", "readwrite")
-                    .objectStore("equipmentList");
-
-                  for (let i = 0; i < resp.body.result.length; i++) {
-                    writeStore.put(resp.body.result[i]);
-                  }
-                  _this.finished++;
-                  resolve();
-                } else {
-                  reject(_this.genErr("读取设备列表失败"));
+                const data = resp.data.data.list;
+                const writeStore = _this.$store.state.db
+                  .transaction("equipmentList", "readwrite")
+                  .objectStore("equipmentList");
+                for (let i = 0; i < data.length; i++) {
+                  writeStore.put(data[i]);
                 }
+                _this.finished++;
+                resolve();
               })
               .catch(function() {
                 reject(_this.genErr("读取设备列表失败"));
@@ -252,13 +235,13 @@ export default {
       });
     },
     polygonFilter(item) {
-      if (this.$store.state.excludeMaps.indexOf(item.mapId) > -1) {
+      if (this.$store.state.excludeMaps.indexOf(item.map_id) > -1) {
         return false;
       }
       if (this.$store.state.allowCategoryType.length > 0) {
         if (
           this.$store.state.allowCategoryType.indexOf(
-            item.mapPolygonCategoryType
+            item.map_polygon_category_type
           ) === -1
         ) {
           return false;
@@ -267,7 +250,7 @@ export default {
       if (this.$store.state.allowCategoryLevel.length > 0) {
         if (
           this.$store.state.allowCategoryLevel.indexOf(
-            item.mapPolygonCategoryLevel
+            item.map_polygon_category_level
           ) === -1
         ) {
           return false;
@@ -288,36 +271,32 @@ export default {
             _this.finished++;
             resolve();
           } else {
-            _this.$http
-              .get(_this.detachHost + "/map-polygon-list", {
-                params: {
-                  project_id: _this.$store.state.projectID,
-                  token: _this.$store.state.token
-                }
-              })
+            openapi({
+              url: "/v3/map/polygon/list",
+              params: {
+                project_id: _this.$store.state.projectID
+              }
+            })
               .then(function(resp) {
-                if (resp.status === 200) {
-                  const writeStore = _this.$store.state.db
-                    .transaction("mapPolygons", "readwrite")
-                    .objectStore("mapPolygons");
-                  const mapPolygons = {};
-                  const data = resp.body.result;
-                  for (let i = 0; i < data.length; i++) {
-                    if (data[i].mapId && _this.polygonFilter(data[i])) {
-                      if (!mapPolygons[data[i].mapId]) {
-                        mapPolygons[data[i].mapId] = [];
-                      }
-                      mapPolygons[data[i].mapId].push(data[i]);
+                console.log(resp);
+                const data = resp.data.data.list;
+                const writeStore = _this.$store.state.db
+                  .transaction("mapPolygons", "readwrite")
+                  .objectStore("mapPolygons");
+                const mapPolygons = {};
+                for (let i = 0; i < data.length; i++) {
+                  if (data[i].map_id && _this.polygonFilter(data[i])) {
+                    if (!mapPolygons[data[i].map_id]) {
+                      mapPolygons[data[i].map_id] = [];
                     }
+                    mapPolygons[data[i].map_id].push(data[i]);
                   }
-                  for (let i in mapPolygons) {
-                    writeStore.put({ mapId: parseInt(i), val: mapPolygons[i] });
-                  }
-                  _this.finished++;
-                  resolve();
-                } else {
-                  reject(_this.genErr("读取点位信息失败"));
                 }
+                for (let i in mapPolygons) {
+                  writeStore.put({ map_id: parseInt(i), val: mapPolygons[i] });
+                }
+                _this.finished++;
+                resolve();
               })
               .catch(function() {
                 reject(_this.genErr("读取点位信息失败"));
@@ -339,41 +318,36 @@ export default {
             _this.finished++;
             resolve();
           } else {
-            _this.$http
-              .get(_this.detachHost + "/map-list", {
-                params: {
-                  project_id: _this.$store.state.projectID,
-                  token: _this.$store.state.token
-                }
-              })
+            openapi({
+              url: "/v3/map/list",
+              params: {
+                project_id: _this.$store.state.projectID
+              }
+            })
               .then(function(resp) {
-                if (resp.status === 200) {
-                  const writeMapList = _this.$store.state.db
-                    .transaction("mapList", "readwrite")
-                    .objectStore("mapList");
-                  const data = resp.body.result;
-                  const mapGroup = {};
-                  for (let i = 0; i < data.length; i++) {
-                    writeMapList.put(data[i]);
-                    if (!mapGroup[data[i].mapPid]) {
-                      mapGroup[data[i].mapPid] = [];
-                    }
-                    mapGroup[data[i].mapPid].push(data[i]);
+                const writeMapList = _this.$store.state.db
+                  .transaction("mapList", "readwrite")
+                  .objectStore("mapList");
+                const data = resp.data.data.list;
+                const mapGroup = {};
+                for (let i = 0; i < data.length; i++) {
+                  writeMapList.put(data[i]);
+                  if (!mapGroup[data[i].map_pid]) {
+                    mapGroup[data[i].map_pid] = [];
                   }
-                  const writeMapGroup = _this.$store.state.db
-                    .transaction("mapGroup", "readwrite")
-                    .objectStore("mapGroup");
-                  for (let mapID in mapGroup) {
-                    writeMapGroup.put({
-                      mapId: parseInt(mapID),
-                      val: mapGroup[mapID]
-                    });
-                  }
-                  _this.finished++;
-                  resolve();
-                } else {
-                  reject(_this.genErr("读取地图信息失败"));
+                  mapGroup[data[i].map_pid].push(data[i]);
                 }
+                const writeMapGroup = _this.$store.state.db
+                  .transaction("mapGroup", "readwrite")
+                  .objectStore("mapGroup");
+                for (let mapID in mapGroup) {
+                  writeMapGroup.put({
+                    map_id: parseInt(mapID),
+                    val: mapGroup[mapID]
+                  });
+                }
+                _this.finished++;
+                resolve();
               })
               .catch(function() {
                 reject(_this.genErr("读取地图信息失败"));

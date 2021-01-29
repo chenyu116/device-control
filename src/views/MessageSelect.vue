@@ -66,6 +66,7 @@
 </template>
 
 <script>
+import openequ from "../libs/openequ";
 export default {
   components: {},
   mounted() {
@@ -159,7 +160,7 @@ export default {
       if (options.args.duration) {
         options.args.duration = options.args.duration * 1000;
       }
-      options.token = this.$store.state.token;
+      options.compatible = true;
       options.payload = JSON.stringify({
         opt: options.opt,
         args: options.args
@@ -170,9 +171,11 @@ export default {
       this.opt.title = "处理中";
       this.opt.finished = false;
 
-      this.$http
-        // .post(this.apiHost + "/opt", options)
-        .post(this.grpcHost + "/push", options)
+      openequ({
+        url: "/v3/push",
+        method: "POST",
+        data: options
+      })
         .then(function() {
           _this.opt.title = "消息发送成功";
         })
@@ -203,17 +206,17 @@ export default {
             const item = {
               text:
                 "[" +
-                (r[i].equipmentRemark || " --- ") +
+                (r[i].equipment_remark || " --- ") +
                 "] " +
-                r[i].equipmentCode,
-              value: r[i].equipmentCode
+                r[i].equipment_code,
+              value: r[i].equipment_code
             };
             // const item = {
             //   text: r[i].name + "[" + _type + "] " + r[i].equipmentCode,
             //   value: r[i].equipmentCode
             // };
             _this.list.push(item);
-            _this.selected.push(r[i].equipmentCode);
+            _this.selected.push(r[i].equipment_code);
           }
         } else {
           _this.errMsg = "读取设备列表失败";

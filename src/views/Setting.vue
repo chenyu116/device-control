@@ -163,7 +163,10 @@
             </v-chip>
           </p>
 
-          <p v-for="(item, index) in previewPoints" :key="index">
+          <p
+            v-for="(item, index) in previewPoints"
+            :key="`previewPoints-${index}`"
+          >
             <span class=" font-weight-bold">{{ item.map_name }}:</span>
             <v-spacer></v-spacer>
             <v-chip-group column="" style="width:80%;">
@@ -172,7 +175,7 @@
                   small=""
                   label=""
                   v-for="(v, i) in item.val"
-                  :key="v.map_gid + i"
+                  :key="`item-${i}`"
                   class=" mt-1 mr-1 chip"
                   outlined=""
                   :attr="JSON.stringify(v)"
@@ -193,6 +196,7 @@
 
 <script>
 import draggable from "vuedraggable";
+import openequ from "../libs/openequ";
 export default {
   components: { draggable },
   data() {
@@ -238,8 +242,10 @@ export default {
       return;
     }
     const _this = this;
-    this.initData();
-    this.initMapData()
+    this.initData()
+      .then(function() {
+        return _this.initMapData();
+      })
       .then(function(mapDetails) {
         return _this.initMapListData(mapDetails);
       })
@@ -262,7 +268,6 @@ export default {
     },
     distributorId: {
       handler(val) {
-        // console.log("watch distributorId", val);
         if (!val[this.currentFace]) return;
         // for (let m = 0; m < this.points[this.currentFace].length; m++) {
         //   this.points[this.currentFace][m].val = [];
@@ -293,7 +298,7 @@ export default {
         this.form.distributor_id = JSON.stringify(dis);
         localStorage.setItem(
           "deviceControl:setting-" +
-            this.$store.state.deviceDetails.equipmentCode,
+            this.$store.state.deviceDetails.equipment_code,
           JSON.stringify(this.form)
         );
       }
@@ -335,82 +340,87 @@ export default {
         this.form.distributor_id = JSON.stringify(newDistributorId);
         localStorage.setItem(
           "deviceControl:setting-" +
-            this.$store.state.deviceDetails.equipmentCode,
+            this.$store.state.deviceDetails.equipment_code,
           JSON.stringify(this.form)
         );
       }
     },
     initData() {
-      try {
-        this.initDistributorId = JSON.parse(
-          this.$store.state.deviceDetails.distributorId
-        );
-      } catch (e) {
-        this.initDistributorId = [
-          this.$store.state.deviceDetails.distributorId
-        ];
-      }
-
-      if (this.initDistributorId.length === 1) {
-        const el = document.getElementsByClassName("v-tabs-bar");
-        if (el && el.length > 0) {
-          el[0].parentNode.removeChild(el[0]);
+      const _this = this;
+      return new Promise(function(resolve) {
+        try {
+          _this.initDistributorId = JSON.parse(
+            _this.$store.state.deviceDetails.distributor_id
+          );
+        } catch (e) {
+          _this.initDistributorId = [
+            _this.$store.state.deviceDetails.distributor_id
+          ];
         }
-      }
 
-      this.form.rotate = parseInt(
-        this.$store.state.deviceDetails.equipmentRotate
-      );
+        if (_this.initDistributorId.length === 1) {
+          const el = document.getElementsByClassName("v-tabs-bar");
+          if (el && el.length > 0) {
+            el[0].parentNode.removeChild(el[0]);
+          }
+        }
+        for (let i = 0; i < _this.initDistributorId.length; i++) {
+          if (!_this.initDistributorId[i]) {
+            _this.initDistributorId[i] = "";
+          }
+        }
 
-      for (let i = 0; i < this.faces; i++) {
-        this.selectMapID.push("");
-        this.distributorId[i] = [];
-        this.points[i] = [];
-        this.items[i] = [];
-      }
+        const rotate = _this.$store.state.deviceDetails.equipment_rotate
+          ? parseInt(_this.$store.state.deviceDetails.equipment_rotate)
+          : 0;
 
-      // console.log(
-      //   "this.distributorId",
-      //   this.$store.state.deviceDetails.distributorId
-      // );
-      // console.log("this.initDistributorId", this.initDistributorId);
-      try {
-        this.form.theme =
-          this.$store.state.themes.length > 0
-            ? this.$store.state.themes[0].value
-            : "theme1";
-      } catch (e) {
-        this.form.theme = "theme1";
-      }
-      // try {
-      //   const setting = JSON.parse(this.$store.state.deviceDetails.setting);
-      //   console.log("setting", setting);
-      //   this.form.show_map = setting.show_map === 1 ? true : false;
-      //   if (setting.theme) this.form.theme = setting.theme;
-      // } catch (e) {}
-      this.form.distributor_id = JSON.stringify(this.initDistributorId);
+        _this.form.rotate = isNaN(rotate) ? 0 : rotate;
 
-      // const form = {
-      //   theme: this.form.theme,
-      //   show_map: this.form.show_map,
-      //   distributor_id: this.form.distributor_id
-      // };
+        for (let i = 0; i < _this.faces; i++) {
+          _this.selectMapID.push(0);
+          _this.distributorId[i] = [];
+          _this.points[i] = [];
+          _this.items[i] = [];
+        }
 
-      const value = JSON.stringify(this.form);
-      localStorage.setItem(
-        "deviceControl:setting-" +
-          this.$store.state.deviceDetails.equipmentCode,
-        value
-      );
+        try {
+          _this.form.theme =
+            _this.$store.state.themes.length > 0
+              ? _this.$store.state.themes[0].value
+              : "theme1";
+        } catch (e) {
+          _this.form.theme = "theme1";
+        }
+        // try {
+        //   const setting = JSON.parse(this.$store.state.deviceDetails.setting);
+        //   console.log("setting", setting);
+        //   this.form.show_map = setting.show_map === 1 ? true : false;
+        //   if (setting.theme) this.form.theme = setting.theme;
+        // } catch (e) {}
+        _this.form.distributor_id = JSON.stringify(_this.initDistributorId);
+
+        // const form = {
+        //   theme: this.form.theme,
+        //   show_map: this.form.show_map,
+        //   distributor_id: this.form.distributor_id
+        // };
+
+        const value = JSON.stringify(_this.form);
+        localStorage.setItem(
+          "deviceControl:setting-" +
+            _this.$store.state.deviceDetails.equipment_code,
+          value
+        );
+        resolve();
+      });
     },
     initMapData() {
       const _this = this;
-      // console.log(this.$store.state.deviceDetails);
       return new Promise(function(resolve, reject) {
         const readStore = _this.$store.state.db
           .transaction("mapList")
           .objectStore("mapList")
-          .get(_this.$store.state.deviceDetails.equipmentMapId);
+          .get(_this.$store.state.deviceDetails.equipment_map_id);
         readStore.onsuccess = function(e) {
           const r = e.target.result;
           if (r) {
@@ -430,21 +440,25 @@ export default {
         const readStore = _this.$store.state.db
           .transaction("mapGroup")
           .objectStore("mapGroup")
-          .get(mapDetails.mapPid);
+          .get(mapDetails.map_pid);
         readStore.onsuccess = function(e) {
           const r = e.target.result;
           if (r && r.val) {
             for (let i = 0; i < r.val.length; i++) {
-              _this.maps[r.val[i].mapId] = r.val[i].detailedName;
+              _this.maps[r.val[i].map_id] = r.val[i].detailed_name;
+              let sortOrder = parseInt(r.val[i].map_sort_order);
+              if (isNaN(sortOrder)) {
+                sortOrder = 0;
+              }
               mapList.push({
-                mapId: r.val[i].mapId,
-                text: r.val[i].detailedName,
-                value: r.val[i].mapId,
-                sortOrder: r.val[i].mapSortOrder
+                mapId: r.val[i].map_id,
+                text: r.val[i].detailed_name,
+                value: r.val[i].map_id,
+                sortOrder: sortOrder
               });
             }
             mapList.sort(function(a, b) {
-              return parseInt(b.sortOrder) - parseInt(a.sortOrder);
+              return b.sortOrder - a.sortOrder;
             });
             _this.mapList = mapList;
             for (let l = 0; l < _this.points.length; l++) {
@@ -473,7 +487,6 @@ export default {
             .get(map.mapId);
           readStore.onsuccess = function(e) {
             const r = e.target.result;
-            console.log("initPolygons", mapId, r);
             if (r && r.val && r.val.length > 0) {
               for (let m = 0; m < _this.initDistributorId.length; m++) {
                 if (!_this.polygons[m]) {
@@ -482,31 +495,31 @@ export default {
                 if (!_this.polygons[m][mapId]) {
                   _this.polygons[m][mapId] = [];
                 }
-                if (_this.initDistributorId[m] == "") continue;
-                const idSplit = _this.initDistributorId[m].split(",");
-                for (let i = 0; i < idSplit.length; i++) {
-                  for (let x = 0; x < r.val.length; x++) {
-                    if (idSplit[i] == r.val[x].mapGid) {
-                      const item = {
-                        mapId: r.val[x].mapId,
-                        mapGid: r.val[x].mapGid,
-                        name: r.val[x].name
-                      };
-                      _this.distributorId[m].push(item);
-                      break;
+                if (_this.initDistributorId[m] != "") {
+                  const idSplit = _this.initDistributorId[m].split(",");
+                  for (let i = 0; i < idSplit.length; i++) {
+                    for (let x = 0; x < r.val.length; x++) {
+                      if (idSplit[i] == r.val[x].map_gid) {
+                        const item = {
+                          mapId: r.val[x].map_id,
+                          mapGid: r.val[x].map_gid,
+                          name: r.val[x].name
+                        };
+                        _this.distributorId[m].push(item);
+                        break;
+                      }
                     }
                   }
                 }
                 for (let x = 0; x < r.val.length; x++) {
                   const item = {
-                    mapId: r.val[x].mapId,
-                    mapGid: r.val[x].mapGid,
+                    mapId: r.val[x].map_id,
+                    mapGid: r.val[x].map_gid,
                     name: r.val[x].name
                   };
                   _this.polygons[m][mapId].push(item);
                 }
               }
-              console.log(_this.polygons);
             }
             resolve();
           };
@@ -515,11 +528,15 @@ export default {
     },
     loadPointsData() {
       this.items[this.currentFace] = [];
-      this.loading.points = true;
+
       const _this = this;
+      if (!this.polygons[this.currentFace]) {
+        return;
+      }
+      this.loading.points = true;
 
       const r = this.polygons[this.currentFace][
-        this.selectMapID[this.currentFace] + ""
+        this.selectMapID[this.currentFace]
       ];
       if (r) {
         for (let i = 0; i < r.length; i++) {
@@ -540,8 +557,8 @@ export default {
     },
     callbackUpdateEquipment(options) {
       const d = Object.assign({}, this.$store.state.deviceDetails);
-      d.distributorId = options.args.distributor_id;
-      d.equipmentRotate = options.args.rotate;
+      d.distributor_id = options.args.distributor_id;
+      d.equipment_rotate = options.args.rotate;
       const writeStore = this.$store.state.db
         .transaction("equipmentList", "readwrite")
         .objectStore("equipmentList");
@@ -552,9 +569,9 @@ export default {
       if (!options.opt) {
         return;
       }
-      const code = this.$store.state.deviceDetails.equipmentCode;
+      const code = this.$store.state.deviceDetails.equipment_code;
       // const code = "sp.server.queue.34e0dddf233916440a98a7b56aa44e67";
-      options.project_id = this.$store.state.deviceDetails.equipmentProjectId;
+      options.project_id = this.$store.state.deviceDetails.equipment_project_id;
       options.codes = code;
       if (typeof options.args !== "object") {
         options.args = {};
@@ -563,15 +580,16 @@ export default {
         opt: options.opt,
         args: options.args
       });
-      options.token = this.$store.state.token;
+      options.compatible = true;
       const _this = this;
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
-      this.$http
-        // .post(this.apiHost + "/opt", options)
-        .post(this.grpcHost + "/push", options)
-        // .post("http://192.168.1.232:5024/v3/push", options)
+      openequ({
+        url: "/v3/push",
+        method: "POST",
+        data: options
+      })
         .then(function() {
           _this.opt.title = "配置发送成功";
           if (typeof callback === "function") {
@@ -579,6 +597,7 @@ export default {
           }
         })
         .catch(function(err) {
+          console.log(err);
           if (!err.body) {
             err.body = "操作失败，请重试";
           }
@@ -608,7 +627,7 @@ export default {
       let args = JSON.parse(
         localStorage.getItem(
           "deviceControl:setting-" +
-            this.$store.state.deviceDetails.equipmentCode
+            this.$store.state.deviceDetails.equipment_code
         )
       );
       if (!args) {
@@ -618,7 +637,7 @@ export default {
       args.show_map = this.form.show_map ? 1 : 0;
       try {
         const dis = JSON.parse(args.distributor_id);
-        if (this.$store.state.deviceDetails.equipmentType != "led") {
+        if (this.$store.state.deviceDetails.equipment_type != "led") {
           args.distributor_id = dis[0];
         }
       } catch (e) {
@@ -646,6 +665,7 @@ export default {
     showPreview() {
       const distributor_id = this.distributorId[this.currentFace];
       const polygons = this.polygons[this.currentFace];
+
       this.previewPoints = [];
       // console.log("distributor_id", distributor_id);
 
@@ -656,6 +676,7 @@ export default {
             val: []
           };
         }
+
         for (let i = 0; i < distributor_id.length; i++) {
           for (let p = 0; p < polygons[this.mapList[m].mapId].length; p++) {
             const polygon = polygons[this.mapList[m].mapId][p];

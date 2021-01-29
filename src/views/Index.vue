@@ -51,20 +51,20 @@ export default {
       list: [],
       loading: {
         full: true
-      },
-      types: {
-        show: "展示屏",
-        infowithfinder: "指路信息屏",
-        info: "信息屏",
-        infoandfinder: "信息屏+指路仪",
-        projection: "投影设备",
-        guide: "导览屏",
-        infoandguider: "导览屏+信息屏",
-        index: "索引屏",
-        indexandfinder: "索引屏+指路仪",
-        index_main: "主屏索引屏",
-        info_main: "主屏信息屏"
       }
+      // types: {
+      //   show: "展示屏",
+      //   infowithfinder: "指路信息屏",
+      //   info: "信息屏",
+      //   infoandfinder: "信息屏+指路仪",
+      //   projection: "投影设备",
+      //   guide: "导览屏",
+      //   infoandguider: "导览屏+信息屏",
+      //   index: "索引屏",
+      //   indexandfinder: "索引屏+指路仪",
+      //   index_main: "主屏索引屏",
+      //   info_main: "主屏信息屏"
+      // }
     };
   },
   watch: {
@@ -110,14 +110,13 @@ export default {
         const r = e.target.result;
         if (r) {
           for (let i = 0; i < r.length; i++) {
-            // const _type = _this.types[r[i].equipment_type] || "";
             const item = {
               text:
                 "[" +
-                (r[i].equipmentRemark || " --- ") +
+                (r[i].equipment_remark || " --- ") +
                 "] " +
-                r[i].equipmentCode,
-              value: r[i].equipmentCode
+                r[i].equipment_code,
+              value: r[i].equipment_code
             };
             list.push(item);
           }

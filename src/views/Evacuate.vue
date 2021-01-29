@@ -5,20 +5,20 @@
       <v-card flat="">
         <p class="title font-weight-bold">紧急情况</p>
         <v-textarea
-          v-if="$store.state.project.projectEmergencyEvacuation === '0'"
+          v-if="$store.state.project.project_emergency_evacuation === '0'"
           label="中文内容"
           outlined=""
           v-model="content.zh_CN"
         ></v-textarea>
         <v-textarea
-          v-if="$store.state.project.projectEmergencyEvacuation === '0'"
+          v-if="$store.state.project.project_emergency_evacuation === '0'"
           label="英文内容"
           outlined=""
           v-model="content.en_US"
         ></v-textarea>
         <v-card-actions>
           <v-btn
-            v-if="$store.state.project.projectEmergencyEvacuation === '0'"
+            v-if="$store.state.project.project_emergency_evacuation === '0'"
             :ripple="{ class: 'red--text' }"
             class="subtitle-1 mt-5 white--text"
             block=""
@@ -29,7 +29,9 @@
             紧急情况
           </v-btn>
           <v-btn
-            v-else-if="$store.state.project.projectEmergencyEvacuation === '1'"
+            v-else-if="
+              $store.state.project.project_emergency_evacuation === '1'
+            "
             :ripple="{ class: 'red--text' }"
             class="subtitle-1 mt-5 white--text"
             block=""
@@ -48,6 +50,7 @@
 </template>
 
 <script>
+import openequ from "../libs/openequ";
 export default {
   components: {},
   mounted() {
@@ -89,10 +92,10 @@ export default {
       const p = JSON.parse(JSON.stringify(this.$store.state.project));
       switch (options.opt) {
         case "enterExit":
-          p.projectEmergencyEvacuation = "1";
+          p.project_emergency_evacuation = "1";
           break;
         case "quitExit":
-          p.projectEmergencyEvacuation = "0";
+          p.project_emergency_evacuation = "0";
           break;
       }
       this.$store.commit("updateProject", p);
@@ -153,23 +156,26 @@ export default {
       //   return;
       // }
       options.confirm = false;
-      options.project_id = this.$store.state.project.projectId;
+      options.project_id = this.$store.state.project.project_id;
       if (typeof options.args !== "object") {
         options.args = {};
       }
-      options.codes = "ALL";
-      // options.codes = "ML5RRI6AS9";
+      // options.codes = "ALL";
+      options.codes = "ML5RRI6AS9";
       options.payload = JSON.stringify({
         opt: options.opt,
         args: options.args
       });
-      options.token = this.$store.state.token;
+      options.compatible = true;
 
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
-      this.$http
-        .post(this.grpcHost + "/push", options)
+      openequ({
+        url: "/v3/push",
+        method: "POST",
+        data: options
+      })
         // .post(this.apiHost + "/opt", options)
         .then(function() {
           _this.opt.title = "命令已发送";
@@ -208,7 +214,7 @@ export default {
             //   text: r[i].name + "[" + _type + "] " + r[i].equipment_code,
             //   value: r[i].equipment_code
             // };
-            _this.list.push(r[i].equipmentCode);
+            _this.list.push(r[i].equipment_code);
           }
         }
       };

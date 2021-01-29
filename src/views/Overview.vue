@@ -12,19 +12,19 @@
             >
           </p>
           <p class="black--text full-width">
-            地图编号：{{ $store.state.deviceDetails.equipmentMapId }}
+            地图编号：{{ $store.state.deviceDetails.equipment_map_id }}
           </p>
           <p class="black--text full-width">
-            类型：{{ $store.state.deviceDetails.equipmentType }}
+            类型：{{ $store.state.deviceDetails.equipment_type }}
           </p>
           <p class="black--text full-width">
-            点位编号：{{ $store.state.deviceDetails.equipmentPointId }}
+            点位编号：{{ $store.state.deviceDetails.equipment_point_id }}
           </p>
           <p class="black--text full-width">
-            旋转角度：{{ $store.state.deviceDetails.equipmentRotate }}
+            旋转角度：{{ $store.state.deviceDetails.equipment_rotate }}
           </p>
           <p class="black--text full-width">
-            版本：{{ $store.state.deviceDetails.equipmentVersion }}
+            版本：{{ $store.state.deviceDetails.equipment_version }}
           </p>
         </v-card-text>
         <v-btn
@@ -46,6 +46,7 @@
 </template>
 
 <script>
+import openequ from "../libs/openequ";
 /**
  * @apiDefine commonProperties
  * @apiParam (properties) {String} AppId 发送消息的客户端编号
@@ -132,9 +133,9 @@ export default {
       if (!options.opt) {
         return;
       }
-      const code = this.$store.state.deviceDetails.equipmentCode;
-      options.project_id = this.$store.state.deviceDetails.equipmentProjectId;
-      options.projects = this.$store.state.deviceDetails.equipmentProjectId;
+      const code = this.$store.state.deviceDetails.equipment_code;
+      options.project_id = this.$store.state.deviceDetails.equipment_project_id;
+      // options.projects = this.$store.state.deviceDetails.equipment_projectId;
       options.codes = code;
       if (options.confirm === true) {
         options.messageId = code + "-" + new Date().getTime();
@@ -146,32 +147,32 @@ export default {
         opt: options.opt
       });
       options.expiration = "10000";
-      options.token = this.$store.state.token;
+      options.compatible = true;
       const _this = this;
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
-      this.$http
-        // .post(this.apiHost + "/opt", options)
-        .post(this.grpcHost + "/push", options)
-        // .post("http://192.168.1.232:5024/v3/push", options)
-        .then(
-          function() {
-            _this.opt.title = "命令发送成功";
-            if (typeof callback === "function") {
-              callback(options);
-            }
-          },
-          function(err) {
-            if (!err.body) {
-              err.body = "操作失败";
-            }
-            _this.opt.title = err.body;
-            if (err.status !== 500 && typeof callback === "function") {
-              callback(options);
-            }
+      openequ({
+        url: "/v3/push",
+        method: "POST",
+        data: options
+      })
+        .then(function() {
+          _this.opt.title = "命令发送成功";
+          if (typeof callback === "function") {
+            callback(options);
           }
-        )
+        })
+        .catch(function(err) {
+          console.log(err);
+          if (!err.body) {
+            err.body = "操作失败";
+          }
+          _this.opt.title = err.body;
+          if (err.status !== 500 && typeof callback === "function") {
+            callback(options);
+          }
+        })
         .finally(function() {
           _this.opt.finished = true;
           setTimeout(function() {
@@ -266,32 +267,26 @@ export default {
     getStatus() {
       const _this = this;
       this.loading.getStatus = true;
-      this.$http
-        .get(this.grpcHost + "/connected", {
-          // .get("http://192.168.1.232:5024/v3/connected", {
-          params: {
-            projects: this.$store.state.deviceDetails.equipmentProjectId,
-            codes: this.$store.state.deviceDetails.equipmentCode,
-            token: this.$store.state.token
-          }
-        })
+      openequ({
+        url: "/v3/connected",
+        params: {
+          projects: this.$store.state.deviceDetails.equipment_project_id,
+          codes: this.$store.state.deviceDetails.equipment_code
+        }
+      })
         .then(function(resp) {
-          if (resp.body && resp.body.result && resp.body.result.length > 0) {
-            if (resp.body.result[0].connected === 1) {
-              _this.status.text = resp.body.result[0].type;
-              _this.status.class = "green--text";
-            } else {
-              _this.status.text = "离线";
-              _this.status.class = "red--text";
-            }
+          const data = resp.data.data.result;
+          if (data[0].connected === 1) {
+            _this.status.text = data[0].type;
+            _this.status.class = "green--text";
           } else {
-            _this.status.text = "无设备信息";
-            _this.status.class = "";
+            _this.status.text = "离线";
+            _this.status.class = "red--text";
           }
         })
         .catch(function() {
           _this.status.text = "读取状态失败";
-          _this.status.class = "";
+          _this.status.class = "red--text";
         })
         .finally(function() {
           setTimeout(function() {

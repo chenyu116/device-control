@@ -47,6 +47,7 @@
 </template>
 
 <script>
+import openequ from "../libs/openequ";
 export default {
   components: {},
   mounted() {
@@ -123,28 +124,26 @@ export default {
         return;
       }
 
-      const code = this.$store.state.deviceDetails.equipmentCode;
-      options.project_id = this.$store.state.deviceDetails.equipmentProjectId;
+      const code = this.$store.state.deviceDetails.equipment_code;
+      options.project_id = this.$store.state.deviceDetails.equipment_project_id;
       options.codes = code;
       if (typeof options.args !== "object") {
         options.args = {};
-      }
-      if (options.args.duration) {
-        options.args.duration = options.args.duration * 1000;
       }
       options.payload = JSON.stringify({
         opt: options.opt,
         args: options.args
       });
-      options.token = this.$store.state.token;
+      options.compatible = true;
       const _this = this;
       this.loading.full = true;
       this.opt.title = "处理中";
       this.opt.finished = false;
-      this.$http
-        // .post(this.apiHost + "/opt", options)
-        .post(this.grpcHost + "/push", options)
-        // .post("http://192.168.1.232:5024/v3/push", options)
+      openequ({
+        url: "/v3/push",
+        method: "POST",
+        data: options
+      })
         .then(function() {
           _this.opt.title = "消息发送成功";
         })

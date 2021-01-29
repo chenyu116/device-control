@@ -2,7 +2,7 @@ import "babel-polyfill";
 import Promise from "bluebird";
 import Vue from "vue";
 import App from "./App.vue";
-import VueResource from "vue-resource";
+import axios from "axios";
 import router from "./router";
 import store from "./store";
 import vuetify from "./plugins/vuetify";
@@ -27,25 +27,9 @@ Promise.config({
 });
 window.Promise = Promise;
 Vue.component("Progress", Progress);
-Vue.use(VueResource);
-Vue.http.options.emulateHTTP = true;
-Vue.http.options.timeout = 15000;
-Vue.http.options.headers = {};
-if (window.debug === true) {
-  Vue.http.options.headers["x-refresh"] = "1";
-}
+Vue.prototype.$axios = axios;
 Vue.use(Confirm);
 Vue.use(Toast);
-const apiHost = "https://api.signp.cn/v2";
-
-Vue.apiHost = apiHost;
-Vue.prototype.apiHost = apiHost;
-const grpcHost = "https://api-equ.signp.cn/v3";
-Vue.grpcHost = grpcHost;
-Vue.prototype.grpcHost = grpcHost;
-const detachHost = "https://api-detach.signp.cn/v3";
-Vue.detachHost = detachHost;
-Vue.prototype.detachHost = detachHost;
 new Vue({
   router,
   store,
