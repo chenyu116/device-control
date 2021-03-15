@@ -204,34 +204,34 @@ export default {
           .transaction("equipmentList")
           .objectStore("equipmentList")
           .getAll();
-        readStore.onsuccess = function(e) {
-          const r = e.target.result;
-          if (r && r.length > 0) {
-            _this.finished++;
-            resolve();
-          } else {
-            openapi({
-              url: "/v3/equipment/list",
-              params: {
-                project_id: _this.$store.state.projectID
+        readStore.onsuccess = function() {
+          // const r = e.target.result;
+          // if (r && r.length > 0) {
+          //   _this.finished++;
+          //   resolve();
+          // } else {
+          openapi({
+            url: "/v3/equipment/list",
+            params: {
+              project_id: _this.$store.state.projectID
+            }
+          })
+            .then(function(resp) {
+              const data = resp.data.data.list;
+              const writeStore = _this.$store.state.db
+                .transaction("equipmentList", "readwrite")
+                .objectStore("equipmentList");
+              for (let i = 0; i < data.length; i++) {
+                writeStore.put(data[i]);
               }
+              _this.finished++;
+              resolve();
             })
-              .then(function(resp) {
-                const data = resp.data.data.list;
-                const writeStore = _this.$store.state.db
-                  .transaction("equipmentList", "readwrite")
-                  .objectStore("equipmentList");
-                for (let i = 0; i < data.length; i++) {
-                  writeStore.put(data[i]);
-                }
-                _this.finished++;
-                resolve();
-              })
-              .catch(function() {
-                reject(_this.genErr("读取设备列表失败"));
-              });
-          }
+            .catch(function() {
+              reject(_this.genErr("读取设备列表失败"));
+            });
         };
+        // };
       });
     },
     polygonFilter(item) {

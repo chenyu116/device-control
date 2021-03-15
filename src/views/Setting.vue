@@ -1,20 +1,16 @@
 <template>
   <v-layout align-start="" justify-center="">
-    <Progress v-if="loading.full" :opt="opt"></Progress>
+    <Progress v-if="loading.full" :opt="opt">加载中...</Progress>
     <v-col cols="12" v-if="$store.state.deviceDetails">
       <v-card flat="">
         <p class="title font-weight-bold">设置</p>
         <v-container fluid>
-          <v-switch
-            v-model="form.show_map"
-            inset
-            label="是否显示地图"
-          ></v-switch>
+          <v-switch v-model="show_map" inset label="是否显示地图"></v-switch>
           <v-select
             :items="$store.state.themes"
             label="主题选择"
             outlined=""
-            v-model="form.theme"
+            v-model="theme"
             color="grey"
             no-data-text="没有主题数据"
             dense=""
@@ -197,13 +193,14 @@
 <script>
 import draggable from "vuedraggable";
 import openequ from "../libs/openequ";
+import openapi from "../libs/openapi";
 export default {
   components: { draggable },
   data() {
     return {
       selection: 0,
       opt: {
-        title: "",
+        title: "加载中",
         finished: false
       },
       tags: [],
@@ -213,9 +210,9 @@ export default {
       viewSetting: false,
       previewPoints: {},
       selectMapID: [],
+      theme: {},
+      show_map: false,
       form: {
-        show_map: false,
-        theme: "",
         distributor_id: "",
         rotate: 0
       },
@@ -223,6 +220,7 @@ export default {
         full: false,
         points: false
       },
+      deviceDetails: {},
       points: [],
       distributorId: [],
       initDistributorId: [],
@@ -241,8 +239,12 @@ export default {
       this.$router.replace("/");
       return;
     }
+    this.loading.full = true;
     const _this = this;
-    this.initData()
+    this.getEquipment()
+      .then(function() {
+        return _this.initData();
+      })
       .then(function() {
         return _this.initMapData();
       })
@@ -252,13 +254,20 @@ export default {
       .then(function() {
         return _this.initPolygons();
       })
-      .catch(function() {
-        // console.log("_this.polygons", _this.polygons);
-      });
+      .catch(function(err) {
+        _this.opt.title = err.message;
+        _this.opt.finished = true;
+        console.log("catch", err);
+        setTimeout(() => {
+          _this.$router.replace("/overview");
+        }, 1000);
 
-    document.body.onselectstart = function() {
-      return false;
-    };
+        // _this.$router.go(-1);
+        // console.log("_this.polygons", _this.polygons);
+      })
+      .finally(function() {
+        _this.loading.full = false;
+      });
   },
   watch: {
     selectMapID(val) {
@@ -297,14 +306,32 @@ export default {
         dis[this.currentFace] = newDistributorId.join(",");
         this.form.distributor_id = JSON.stringify(dis);
         localStorage.setItem(
-          "deviceControl:setting-" +
-            this.$store.state.deviceDetails.equipment_code,
+          "deviceControl:setting-" + this.deviceDetails.equipment_code,
           JSON.stringify(this.form)
         );
       }
     }
   },
   methods: {
+    getEquipment() {
+      const _this = this;
+      return new Promise(function(resolve, reject) {
+        openapi({
+          url: "/v3/equipment",
+          params: {
+            equipment_id: _this.$store.state.deviceDetails.equipment_id
+          }
+        })
+          .then(function(resp) {
+            _this.deviceDetails = resp.data.data;
+            resolve();
+          })
+          .catch(function(err) {
+            console.log(err);
+            reject(new Error("读取设备详情失败"));
+          });
+      });
+    },
     changeSetting() {
       this.viewSetting = false;
       const chosen = document.getElementsByClassName("chip");
@@ -339,8 +366,7 @@ export default {
         }
         this.form.distributor_id = JSON.stringify(newDistributorId);
         localStorage.setItem(
-          "deviceControl:setting-" +
-            this.$store.state.deviceDetails.equipment_code,
+          "deviceControl:setting-" + this.deviceDetails.equipment_code,
           JSON.stringify(this.form)
         );
       }
@@ -350,12 +376,10 @@ export default {
       return new Promise(function(resolve) {
         try {
           _this.initDistributorId = JSON.parse(
-            _this.$store.state.deviceDetails.distributor_id
+            _this.deviceDetails.distributor_id
           );
         } catch (e) {
-          _this.initDistributorId = [
-            _this.$store.state.deviceDetails.distributor_id
-          ];
+          _this.initDistributorId = [_this.deviceDetails.distributor_id];
         }
 
         if (_this.initDistributorId.length === 1) {
@@ -370,8 +394,8 @@ export default {
           }
         }
 
-        const rotate = _this.$store.state.deviceDetails.equipment_rotate
-          ? parseInt(_this.$store.state.deviceDetails.equipment_rotate)
+        const rotate = _this.deviceDetails.equipment_rotate
+          ? parseInt(_this.deviceDetails.equipment_rotate)
           : 0;
 
         _this.form.rotate = isNaN(rotate) ? 0 : rotate;
@@ -383,20 +407,25 @@ export default {
           _this.items[i] = [];
         }
 
-        try {
-          _this.form.theme =
-            _this.$store.state.themes.length > 0
-              ? _this.$store.state.themes[0].value
-              : "theme1";
-        } catch (e) {
-          _this.form.theme = "theme1";
-        }
         // try {
-        //   const setting = JSON.parse(this.$store.state.deviceDetails.setting);
-        //   console.log("setting", setting);
-        //   this.form.show_map = setting.show_map === 1 ? true : false;
-        //   if (setting.theme) this.form.theme = setting.theme;
-        // } catch (e) {}
+        //   _this.form.theme =
+        //     _this.$store.state.themes.length > 0
+        //       ? _this.$store.state.themes[0].value
+        //       : "theme1";
+        // } catch (e) {
+        //   _this.form.theme = "theme1";
+        // }
+        _this.show_map = _this.deviceDetails.show_map ? true : false;
+        if (_this.$store.state.themes.length) {
+          for (let i = 0; i < _this.$store.state.themes.length; i++) {
+            if (
+              _this.$store.state.themes[i].value == _this.deviceDetails.theme
+            ) {
+              _this.theme = _this.$store.state.themes[i];
+              break;
+            }
+          }
+        }
         _this.form.distributor_id = JSON.stringify(_this.initDistributorId);
 
         // const form = {
@@ -407,8 +436,7 @@ export default {
 
         const value = JSON.stringify(_this.form);
         localStorage.setItem(
-          "deviceControl:setting-" +
-            _this.$store.state.deviceDetails.equipment_code,
+          "deviceControl:setting-" + _this.deviceDetails.equipment_code,
           value
         );
         resolve();
@@ -420,7 +448,7 @@ export default {
         const readStore = _this.$store.state.db
           .transaction("mapList")
           .objectStore("mapList")
-          .get(_this.$store.state.deviceDetails.equipment_map_id);
+          .get(_this.deviceDetails.equipment_map_id);
         readStore.onsuccess = function(e) {
           const r = e.target.result;
           if (r) {
@@ -556,9 +584,11 @@ export default {
       }, 500);
     },
     callbackUpdateEquipment(options) {
-      const d = Object.assign({}, this.$store.state.deviceDetails);
+      const d = JSON.parse(JSON.stringify(this.deviceDetails));
       d.distributor_id = options.args.distributor_id;
       d.equipment_rotate = options.args.rotate;
+      d.theme = this.theme.value;
+      d.show_map = this.show_map;
       const writeStore = this.$store.state.db
         .transaction("equipmentList", "readwrite")
         .objectStore("equipmentList");
@@ -569,18 +599,20 @@ export default {
       if (!options.opt) {
         return;
       }
-      const code = this.$store.state.deviceDetails.equipment_code;
-      // const code = "sp.server.queue.34e0dddf233916440a98a7b56aa44e67";
-      options.project_id = this.$store.state.deviceDetails.equipment_project_id;
+      const code = this.deviceDetails.equipment_code;
+      options.project_id = this.deviceDetails.equipment_project_id;
       options.codes = code;
       if (typeof options.args !== "object") {
         options.args = {};
       }
+      options.args.theme = this.theme;
+      options.args.show_map = this.show_map ? 1 : 0;
       options.payload = JSON.stringify({
         opt: options.opt,
         args: options.args
       });
       options.compatible = true;
+
       const _this = this;
       this.loading.full = true;
       this.opt.title = "处理中";
@@ -626,8 +658,7 @@ export default {
     updateSetting() {
       let args = JSON.parse(
         localStorage.getItem(
-          "deviceControl:setting-" +
-            this.$store.state.deviceDetails.equipment_code
+          "deviceControl:setting-" + this.deviceDetails.equipment_code
         )
       );
       if (!args) {
@@ -637,7 +668,7 @@ export default {
       args.show_map = this.form.show_map ? 1 : 0;
       try {
         const dis = JSON.parse(args.distributor_id);
-        if (this.$store.state.deviceDetails.equipment_type != "led") {
+        if (this.deviceDetails.equipment_type != "led") {
           args.distributor_id = dis[0];
         }
       } catch (e) {

@@ -160,8 +160,8 @@ export default {
       if (typeof options.args !== "object") {
         options.args = {};
       }
-      // options.codes = "ALL";
-      options.codes = "ML5RRI6AS9";
+      options.codes = "ALL";
+      // options.codes = "ML5RRI6AS9";
       options.payload = JSON.stringify({
         opt: options.opt,
         args: options.args

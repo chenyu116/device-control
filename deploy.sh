@@ -62,7 +62,7 @@ if [ ! -f "template.lock" ]; then
     buildTime=$(<builded.lock)
     echo "buildTime: $buildTime"
     # rm -rf /home/roger/workspace/api-equ/assets/static/control
-    # cp dist/index.html /home/roger/workspace/view.signp.cn/templates/control/index.html
+    cp dist/index.html /mnt/c/workspace/view.signp.cn/templates/control/index.html
     # cp -r dist/control /home/roger/workspace/api-equ/assets/static
     # file=$(<./dist/index.html)
     # content=$(printf "%s""$file" | base64 | tr -d "\n")
